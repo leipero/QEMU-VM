@@ -10,9 +10,10 @@ Anything other than me having fun, included but not limited to the actual functi
 
 ## How to use
 Script requires superuser.
- Run: 
- 
-      sudo bash autoconfiguration.sh
+ Run:
+```
+sudo bash autoconfiguration.sh
+```
 
 ## Wiki (Yuri Alek's page)
 [Check the wiki for more information and guides on how to make everything work](https://gitlab.com/YuriAlek/vfio/wikis/Home).
