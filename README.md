@@ -5,7 +5,7 @@ An attempt to make auto configuration script for single GPU passthrough scripts 
 Script attempts to be as modular as possible, it should be easy to edit, add or remove functionality.
 Some functionality is not implemented or it is removed, if you need such functionality, feel free to change and improve the script, or visit Yuri's page on gitlab (I would recommend that in any circumstance). 
 
-## What it's not
+## What it is not
 Anything other than me having fun, included but not limited to the actual functional and useful tool.
 
 ## How to use
