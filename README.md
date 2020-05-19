@@ -27,6 +27,7 @@ Script requires superuser.
 - Make it more modular with possibility of directory restructure for better VM management.
 - Remove terminal dependency.
 - Sane display manager detection (none added).
+- USB and other potential devices auto-detection.
 - Add support for other distributions of GNU/Linux.
 - Add support for other guests in both virgl and passthrough mode.
 - Lot's of things...
