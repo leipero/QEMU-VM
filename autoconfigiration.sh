@@ -192,7 +192,7 @@ function bootloader_setup() {
 }
 
 function grub_find() {
-	echo "Searching GRUB for Debian/Ubuntu distributions..."
+	echo "Searching GRUB..."
 	GPAPT=$(find / -path  \*/etc/default/grub > /dev/null 2>&1)
 	if [[ -n $GPAPT ]]; then
 		grub_enable_iommu
