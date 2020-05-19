@@ -112,7 +112,7 @@ function pacman_install_dep() {
 
 function apt_addgroups() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
-		echo -e "\033[1;36mUser is lready in groups.\033[0m"
+		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
 		adduser $(logname) libvirt
 		adduser $(logname) kvm
@@ -122,7 +122,7 @@ function apt_addgroups() {
 
 function pacman_addgroups() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
-		echo -e "\033[1;36mUser is lready in groups.\033[0m"
+		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
 		gpasswd -a $(logname) libvirt
 		gpasswd -a $(logname) kvm
