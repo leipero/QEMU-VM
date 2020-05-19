@@ -1,0 +1,84 @@
+## User
+VM_USER=$(logname)
+
+## IOMMU groups
+IOMMU_GPU=
+IOMMU_GPU_AUDIO=
+IOMMU_PCI_AUDIO=
+
+## For extracting the VBIOS
+VBIOS_EXTRACT_PATH=/root/VBIOS.rom
+NVFLASH=/root/nvflash_linux
+extract_videobusid="0000:$IOMMU_GPU"
+
+## Virsh devices
+VIRSH_GPU=
+VIRSH_GPU_AUDIO=
+VIRSH_PCI_AUDIO=
+
+## PCI BUS ID
+videoid=
+audioid=
+videobusid=
+audiobusid=
+pciaudioid=
+pciaudiobusid=
+
+## QEMU options
+RAM=4G
+CORES=4
+MACOS_RAM=4G
+MACOS_CORES=4
+
+## USB DEVICE(s) ID(s)
+usb1_vendorid=0x
+usb1_productid=0x
+usb2_vendorid=0x
+usb2_productid=0x
+usb3_vendorid=0x
+usb3_productid=0x
+usb4_vendorid=0x
+usb4_productid=0x
+
+## Network
+TAP_INTERFACE=tap0
+TAP_IP="10.10.10.1/24"
+DNSMASQ_CONF="${BASH_SOURCE%/*}/dnsmasq.conf"
+SMB_CONF="${BASH_SOURCE%/*}/smb.conf"
+
+## Log file
+LOG=
+
+## Local path for storage
+IMAGES=
+
+## VBIOS
+VBIOS=$IMAGES/VBIOS.rom
+
+## Windows
+VIRTIO=$IMAGES/virtio-win.iso
+WINDOWS_ISO=$IMAGES/
+WINDOWS_IMG=$IMAGES/
+OVMF=/usr/share/ovmf/x64/OVMF_CODE.fd
+OVMF_VARS=/usr/share/ovmf/x64/OVMF_VARS.fd
+
+## Linux
+LINUX_ISO=$IMAGES/
+LINUX_IMG=$IMAGES/
+TEMP_ISO=$IMAGES/
+
+## Android-x86
+ANDROID_ISO=$IMAGES/
+ANDROID_IMG=$IMAGES/
+
+## MacOS
+MACOS_ISO=$IMAGES/mojave.iso
+MACOS_IMG=$IMAGES/mojave.qcow2
+MACOS_CLOVER=$IMAGES/clover.qcow2
+MACOS_OVMF=$IMAGES/MACOS_OVMF_CODE.fd
+MACOS_OVMF_VARS=$IMAGES/MACOS_OVMF_VARS.fd
+MACOS_OPTIONS="+pcid,+ssse3,+sse4.2,+popcnt,+aes,+xsave,+avx,+xsaveopt,avx2,+smep,check"
+
+## Ulimit
+ULIMIT=$(ulimit -a | grep "max locked memory" | awk '{print $6}')
+ULIMIT_TARGET=$(( $(echo $RAM | tr -d 'G')*1048576+100000 ))
