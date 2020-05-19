@@ -24,7 +24,6 @@ sudo bash autoconfiguration.sh
 - MacOS was not tested at all.
 
 ## TODO
-- Arch GRUB fix.
 - Simplify script and make less assumptions.
 - Make it more modular with possibility of directory restructure for better VM management.
 - Remove terminal dependency.
