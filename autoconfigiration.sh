@@ -309,6 +309,11 @@ function mkscripts_exec() {
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/vandroidx86_virsh.sh > /dev/null 2>&1
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
+	sudo -u $(logname) chmod +x ${IMAGES_DIR}/avmic_tool.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_mnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_unmnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/windows_mnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/windows_unmnt.sh
 }
 
 ##***************************************************************************************************************************
@@ -318,7 +323,7 @@ function ask_settings() {
 	echo "Auto Configuration for VMs."
 	echo "  This creates qcow2 virtual image and populates paths,"
 	echo "  you can choose name and other options."
-	read -r -p "Do you want to start auto configuration? [Y/n] (default: Yes) " -e -i y asksettings
+	read -r -p " Do you want to start auto configuration? [Y/n] (default: Yes) " -e -i y asksettings
 	case $asksettings in
 	    	[yY][eE][sS]|[yY])
 	    	unset asksettings
@@ -343,7 +348,7 @@ function vm_choice() {
 	echo "	4) MacOS"
 	echo "	5) Exit VM Choice"
 	until [[ $VM_CHOICE =~ ^[1-5]$ ]]; do
-		read -r -p "VM type choice [1-5]: " VM_CHOICE
+		read -r -p " VM type choice [1-5]: " VM_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
@@ -373,7 +378,7 @@ function vm_choice() {
 
 function windows_create() {
 	echo "Windows VM creation:"
-	read -r -p "Choose name for your VHD (e.g. windows10): " winvhdname
+	read -r -p " Choose name for your VHD (e.g. windows10): " winvhdname
 	if [[ "$winvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
 		read -r -p "Choose your VHD size (in GB, numeric only): " winvhdsize
 		if [[ "$winvhdsize" =~ ^[0-9]*$ ]]; then
@@ -394,9 +399,9 @@ function windows_create() {
 
 function linux_create() {
 	echo "GNU/Linux VM creation:"
-	read -r -p "Choose name for your VHD (e.g. rhe8): " linvhdname
+	read -r -p " Choose name for your VHD (e.g. rhe8): " linvhdname
 	if [[ "$linvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p "Choose your VHD size (in GB, numeric only): " linvhdsize
+		read -r -p " Choose your VHD size (in GB, numeric only): " linvhdsize
 		if [[ "$linvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${linvhdname}.qcow2 ${linvhdsize}G
 			echo "Image created."
@@ -414,9 +419,9 @@ function linux_create() {
 
 function androidx86_create() {
 	echo "Android x86 VM creation:"
-	read -r -p "Choose name for your VHD (e.g. androidx86): " andvhdname
+	read -r -p " Choose name for your VHD (e.g. androidx86): " andvhdname
 	if [[ "$andvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p "Choose your VHD size (in GB, numeric only): " andvhdsize
+		read -r -p " Choose your VHD size (in GB, numeric only): " andvhdsize
 		if [[ "$andvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${andvhdname}.qcow2 ${andvhdsize}G
 			echo "Image created."
@@ -434,9 +439,9 @@ function androidx86_create() {
 
 function macos_create() {
 	echo "MacOS VM creation:"
-	read -r -p "Choose name for your VHD (e.g. macosX): " macvhdname
+	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
 	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p "Choose your VHD size (in GB, numeric only): " macvhdsize
+		read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
 		if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
 			echo "Image created."
@@ -453,7 +458,7 @@ function macos_create() {
 }
 
 function another_os() {
-	read -r -p "Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
+	read -r -p " Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
 	case $askanotheros in
 	    	[yY][eE][sS]|[yY])
 		vm_choice
@@ -470,7 +475,7 @@ function another_os() {
 }
 
 function download_virtio() {
-	read -r -p "Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
+	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
 	case $askvirtio in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
@@ -500,7 +505,7 @@ function passthroughshortcuts() {
 	echo "	4) MacOS (untested passthrough)"
 	echo "	5) Exit selection."
 	until [[ $VM_CHOICE =~ ^[1-5]$ ]]; do
-		read -r -p "Create startup script and shortcut for [1-5]: " VM_SHS_CHOICE
+		read -r -p " Create startup script and shortcut for [1-5]: " VM_SHS_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
@@ -585,7 +590,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
 ## VirGL
 
 function startupvrglshortcut_linux() {
-	read -r -p "Do you want to create GNU/Linux VirGL shortcut? [Y/n] " askvrglshortl
+	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] " askvrglshortl
 	case $askvrglshortl in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) echo "[Desktop Entry]
@@ -607,7 +612,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/linux_virgl_vm.de
 }
 
 function startupvrglshortcut_androidx86() {
-	read -r -p "Do you want to create Android x86 VirGL shortcut? [Y/n] " askvrglshorta
+	read -r -p " Do you want to create Android x86 VirGL shortcut? [Y/n] " askvrglshorta
 	case $askvrglshorta in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) echo "[Desktop Entry]
@@ -636,6 +641,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 IMAGES_DIR="${SCRIPT_DIR}/images"
 ICONS_DIR="${SCRIPT_DIR}/icons"
+MNTSCR_DIR="${SCRIPT_DIR}/vhd_mnt"
 CONFIG_LOC="${SCRIPTS_DIR}/config"
 ## Get CPU information.
 CORES_NUM_GET="$(nproc)"
