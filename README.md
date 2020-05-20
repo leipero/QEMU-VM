@@ -27,6 +27,7 @@ sudo bash autoconfiguration.sh
 - Simplify script and make less assumptions.
 - Make it more modular with possibility of directory restructure for better VM management.
 - Remove terminal dependency.
+- Add wayland support.
 - USB and other potential devices auto-detection.
 - Add support for other distributions of GNU/Linux.
 - Add support for other guests in both virgl and passthrough mode.
