@@ -479,7 +479,7 @@ function download_virtio() {
 	case $askvirtio in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
-		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/
+		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		unset askvirtio
 		;;
 	[nN][oO]|[nN])
