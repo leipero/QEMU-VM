@@ -508,7 +508,7 @@ function passthroughshortcuts() {
 	until [[ $VM_CHOICE =~ ^[1-5]$ ]]; do
 		read -r -p " Create startup script and shortcut for [1-5]: " VM_SHS_CHOICE
 	done
-	case $VM_CHOICE in
+	case $VM_SHS_CHOICE in
 	1)
 		unset VM_SHS_CHOICE
 		startupscriptcreate_windows
