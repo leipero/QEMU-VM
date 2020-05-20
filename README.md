@@ -21,6 +21,7 @@ sudo bash autoconfiguration.sh
 ## Known problems
 - Script relies on logged user and sudo or su commands in some parts.
 - MacOS was not tested at all.
+- Wayland session was not tested at all and will likely not work.
 
 ## TODO
 - Simplify script and make less assumptions.
