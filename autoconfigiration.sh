@@ -310,10 +310,11 @@ function mkscripts_exec() {
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 	sudo -u $(logname) chmod +x ${IMAGES_DIR}/avmic_tool.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_unmnt.sh
 	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/windows_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/windows_unmnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_mnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/vandroidx86_mnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/macos_mnt.sh
+	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/zvhd_unmount.sh
 }
 
 ##***************************************************************************************************************************
