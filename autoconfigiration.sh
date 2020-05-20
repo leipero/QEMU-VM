@@ -5,43 +5,6 @@ export LC_ALL=C
 ## Check if script was executed with the root privileges.
 [[ "$EUID" -ne 0 ]] && echo "Please run with root privileges." && sleep 5 && exit 1
 
-## Directory structure.
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
-SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-IMAGES_DIR="${SCRIPT_DIR}/images"
-ICONS_DIR="${SCRIPT_DIR}/icons"
-CONFIG_LOC="${SCRIPTS_DIR}/config"
-## Get CPU information.
-CORES_NUM_GET="$(nproc)"
-## Get GPU kernel module information.
-GPU1=$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)
-
-## Check OS, install dependencies, configure system.
-function checkos_install() {
-	if command -v apt > /dev/null 2>&1; then
-		populate_base_config
-		apt_install_dep
-		apt_addgroups
-		earlykms_enable_apt
-		bootloader_setup
-	elif command -v yum > /dev/null 2>&1; then
-		echo "yum"
-	elif command -v dnf > /dev/null 2>&1; then
-		echo "dnf"
-	elif command -v zypper > /dev/null 2>&1; then
-		echo "zypper"
-	elif command -v pacman > /dev/null 2>&1; then
-		populate_base_config
-		pacman_install_dep
-		pacman_addgroups
-		earlykms_enable_pacman
-		bootloader_setup
-	else
-		echo "No compatible package manager found. Exiting..."
-		exit 1
-	fi
-}
-
 function welcomescript() {
 	clear
 	echo "----------------------------------------------------------------"
@@ -68,13 +31,29 @@ function welcomescript() {
 	esac
 }
 
-function populate_base_config() {
-	# Populate config paths
-	sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
-	sed -i '/^IMAGES=/c\IMAGES='${SCRIPTS_DIR}'/images' ${CONFIG_LOC}
-	# Set number of cores in the config file
-	sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
-	sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+function checkos_install() {
+	if command -v apt > /dev/null 2>&1; then
+		populate_base_config
+		apt_install_dep
+		apt_addgroups
+		earlykms_enable_apt
+		bootloader_setup
+	elif command -v yum > /dev/null 2>&1; then
+		echo "yum"
+	elif command -v dnf > /dev/null 2>&1; then
+		echo "dnf"
+	elif command -v zypper > /dev/null 2>&1; then
+		echo "zypper"
+	elif command -v pacman > /dev/null 2>&1; then
+		populate_base_config
+		pacman_install_dep
+		pacman_addgroups
+		earlykms_enable_pacman
+		bootloader_setup
+	else
+		echo "No compatible package manager found. Exiting..."
+		exit 1
+	fi
 }
 
 ##***************************************************************************************************************************
@@ -94,7 +73,7 @@ function apt_install_dep() {
 	apt-get install -y libvirglrenderer1 > /dev/null 2>&1
 	echo "libvirglrenderer Installed"
 	apt-get install -y gnome-terminal > /dev/null
-	echo -e "\033[1;36mDependencies installed.\033[0m"
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function pacman_install_dep() {
@@ -103,7 +82,7 @@ function pacman_install_dep() {
 	else
 		echo "Installing dependencies, please wait..."
 		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl gnome-terminal > /dev/null
-		echo "Dependencies Installed."
+		echo "Dependencies are installed."
 	fi
 }
 
@@ -149,12 +128,26 @@ function earlykms_enable_pacman() {
 	else
 		echo "Enabling early KMS..."
 		sed -i -e "s/^MODULES=(/MODULES=(${GPU1} /g" /etc/mkinitcpio.conf
-		mkinitcpio -p linux
+		for lnxkrnl in /etc/mkinitcpio.d/*; do mkinitcpio -p "$lnxkrnl";  done
 	fi
 }
 
 ##***************************************************************************************************************************
 ## Enable IOMMU.
+
+function bootloader_setup() {
+	iommu_check
+	cpu_iommu_set
+	grub_find
+	bootmgrfound
+	iommu_populate
+	ask_settings
+	checkdm_pacman_apt
+	mkscripts_exec
+	autologintty3
+	passthroughshortcuts
+	reminder
+}
 
 function iommu_check() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
@@ -176,19 +169,6 @@ function cpu_iommu_set() {
 	else
 		IOMMU_CPU=intel
 	fi
-}
-
-function bootloader_setup() {
-	iommu_check
-	cpu_iommu_set
-	grub_find
-	bootmgrfound
-	iommu_populate
-	ask_settings
-	mkscripts_exec
-	autologintty3
-	passthroughshortcuts
-	reminder
 }
 
 function grub_find() {
@@ -218,8 +198,11 @@ function grub_enable_iommu() {
 	else
 		sed -i -e "s/iommu=pt//g" /etc/default/grub
 		sed -i -e "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${IOMMU_CPU}_iommu=on iommu=pt /g" /etc/default/grub
-		update-grub
-		grub-mkconfig -o /boot/grub/grub.cfg
+		echo "IOMMU line added to the GRUB configuration file(s)."
+		echo "Generating GRUB configuration file, please wait..."
+		update-grub > /dev/null 2>&1
+		grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
+		echo "GRUB configuration file generated."
 	fi
 }
 
@@ -229,7 +212,7 @@ function systemdb_enable_iommu() {
 	else
 		sed -i -e "s/iommu=pt//g" ${SDBP}
 		sed -i -e "/options/s/$/ ${IOMMU_CPU}_iommu=on iommu=pt/" ${SDBP}
-		echo "IOMMU line added to the Systemd-boot config file(s)."
+		echo "IOMMU line added to the Systemd-boot configuration file(s)."
 	fi
 }
 
@@ -242,13 +225,42 @@ function bootmgrfound() {
 }
 
 ##***************************************************************************************************************************
-## Populate config file for IOMMU.
+## Display Manager detecttion.
+
+function checkdm_pacman_apt() {
+	if [ -f /usr/lib/systemd/system/gdm.service ] > /dev/null 2>&1; then
+		DMNGR="gdm"
+	elif [ -f /usr/lib/systemd/system/lightdm.service ] > /dev/null 2>&1; then
+		DMNGR="lightdm"
+	elif [ -f /usr/lib/systemd/system/lxdm.service ] > /dev/null 2>&1; then
+		DMNGR="lightdm"
+	elif [ -f /usr/lib/systemd/system/sddm.service ] > /dev/null 2>&1; then
+		DMNGR="sddm"
+	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
+		DMNGR="xdm"
+	else
+		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
+	fi
+	echo "Virsh scripts populated with \"${DMNGR}\" display manager."
+}
+
+##***************************************************************************************************************************
+## Populate config file and scripts.
+
+function populate_base_config() {
+	# Populate config paths
+	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPTS_DIR}'/images' ${CONFIG_LOC}
+	# Set number of cores in the config file
+	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+}
 
 function iommu_populate() {
-	echo "Populating config file for IOMMU, please wait."
+	echo "Populating config file for IOMMU, please wait..."
 	sleep 1
 	# Get IOMMU groups
-	chmod +x "${SCRIPTS_DIR}"/iommu.sh
+	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
 	IOMMU_GPU_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/^[ \t]*//' | head -c 7)"
 	IOMMU_GPU_AUDIO_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDMI" | sed -e 's/^[ \t]*//' | head -c 7)"
 	IOMMU_PCI_AUDIO_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
@@ -264,19 +276,39 @@ function iommu_populate() {
 	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO_GET//:/_}"
 	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
 	## Populate config IOMMU groups
-	sed -i '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU_GET}'"' ${CONFIG_LOC}
-	sed -i '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO_GET}'"' ${CONFIG_LOC}
-	sed -i '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO_GET}'"' ${CONFIG_LOC}
 	## Populate config PCI BUS IDs
-	sed -i '/^videoid=/c\videoid="'${videoid_GET}'"' ${CONFIG_LOC}
-	sed -i '/^audioid=/c\audioid="'${audioid_GET}'"' ${CONFIG_LOC}
-	sed -i '/^pciaudioid=/c\pciaudioid="'${pciaudioid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^videoid=/c\videoid="'${videoid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^audioid=/c\audioid="'${audioid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^pciaudioid=/c\pciaudioid="'${pciaudioid_GET}'"' ${CONFIG_LOC}
 	## Populate config Virsh devices
-	sed -i '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
-	sed -i '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
-	sed -i '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
-	echo "Populating config file for IOMMU done."
+	sudo -u $(logname) sed -i '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
+	echo "Config file populated with IOMMU settings."
 	sleep 1
+}
+
+function populatedm_virshscripts() {
+	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/windows_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/windows_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/linux_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/linux_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/macos_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/macos_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/vandroidx86_virsh.sh
+	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/vandroidx86_virsh.sh
+}
+
+function mkscripts_exec() {
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/linux_virgl.sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/vandroidx86_virgl.sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/linux_virsh.sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/vandroidx86_virsh.sh > /dev/null 2>&1
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 }
 
 ##***************************************************************************************************************************
@@ -347,7 +379,7 @@ function windows_create() {
 		if [[ "$winvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${winvhdname}.qcow2 ${winvhdsize}G
 			echo "Image created."
-			sed -i '/^WINDOWS_IMG=$IMAGES/c\WINDOWS_IMG=$IMAGES/'${winvhdname}'.qcow2' ${CONFIG_LOC}
+			sudo -u $(logname) sed -i '/^WINDOWS_IMG=$IMAGES/c\WINDOWS_IMG=$IMAGES/'${winvhdname}'.qcow2' ${CONFIG_LOC}
 		else
 			echo "Invalid input, use only numerics."
 			windows_create
@@ -368,7 +400,7 @@ function linux_create() {
 		if [[ "$linvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${linvhdname}.qcow2 ${linvhdsize}G
 			echo "Image created."
-			sed -i '/^LINUX_IMG=$IMAGES/c\LINUX_IMG=$IMAGES/'${linvhdname}'.qcow2' ${CONFIG_LOC}
+			sudo -u $(logname) sed -i '/^LINUX_IMG=$IMAGES/c\LINUX_IMG=$IMAGES/'${linvhdname}'.qcow2' ${CONFIG_LOC}
 		else
 			echo "Invalid input, use only numerics."
 			linux_create
@@ -388,7 +420,7 @@ function androidx86_create() {
 		if [[ "$andvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${andvhdname}.qcow2 ${andvhdsize}G
 			echo "Image created."
-			sed -i '/^ANDROID_IMG=$IMAGES/c\ANDROID_IMG=$IMAGES/'${andvhdname}'.qcow2' ${CONFIG_LOC}
+			sudo -u $(logname) sed -i '/^ANDROID_IMG=$IMAGES/c\ANDROID_IMG=$IMAGES/'${andvhdname}'.qcow2' ${CONFIG_LOC}
 		else
 			echo "Invalid input, use only numerics."
 			androidx86_create
@@ -408,7 +440,7 @@ function macos_create() {
 		if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
 			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
 			echo "Image created."
-			sed -i '/^MACOS_IMG=$IMAGES/c\MACOS_IMG=$IMAGES/'${macvhdname}'.qcow2' ${CONFIG_LOC}
+			sudo -u $(logname) sed -i '/^MACOS_IMG=$IMAGES/c\MACOS_IMG=$IMAGES/'${macvhdname}'.qcow2' ${CONFIG_LOC}
 		else
 			echo "Invalid input, use only numerics."
 			macos_create
@@ -599,14 +631,16 @@ Type=Application" > /home/$(logname)/.local/share/applications/androidx86_virgl_
 ##***************************************************************************************************************************
 ## Various
 
-function mkscripts_exec() {
-	chmod +x ${SCRIPTS_DIR}/linux_virgl.sh
-	chmod +x ${SCRIPTS_DIR}/vandroidx86_virgl.sh
-	chmod +x ${SCRIPTS_DIR}/linux_virsh.sh
-	chmod +x ${SCRIPTS_DIR}/vandroidx86_virsh.sh > /dev/null 2>&1
-	chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
-	chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
-}
+## Directory structure.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
+SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
+IMAGES_DIR="${SCRIPT_DIR}/images"
+ICONS_DIR="${SCRIPT_DIR}/icons"
+CONFIG_LOC="${SCRIPTS_DIR}/config"
+## Get CPU information.
+CORES_NUM_GET="$(nproc)"
+## Get GPU kernel module information.
+GPU1=$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)
 
 function autologintty3() {
 	echo -e "\033[1;31mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
