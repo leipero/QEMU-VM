@@ -128,7 +128,7 @@ function earlykms_enable_pacman() {
 	else
 		echo "Enabling early KMS..."
 		sed -i -e "s/^MODULES=(/MODULES=(${GPU1} /g" /etc/mkinitcpio.conf
-		for lnxkrnl in /etc/mkinitcpio.d/*; do mkinitcpio -p "$lnxkrnl";  done
+		for lnxkrnl in /etc/mkinitcpio.d/*.preset; do mkinitcpio -p "$lnxkrnl";  done
 	fi
 }
 
