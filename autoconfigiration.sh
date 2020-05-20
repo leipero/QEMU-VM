@@ -230,14 +230,19 @@ function bootmgrfound() {
 function checkdm_pacman_apt() {
 	if [ -f /usr/lib/systemd/system/gdm.service ] > /dev/null 2>&1; then
 		DMNGR="gdm"
+		populatedm_virshscripts
 	elif [ -f /usr/lib/systemd/system/lightdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
+		populatedm_virshscripts
 	elif [ -f /usr/lib/systemd/system/lxdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
+		populatedm_virshscripts
 	elif [ -f /usr/lib/systemd/system/sddm.service ] > /dev/null 2>&1; then
 		DMNGR="sddm"
+		populatedm_virshscripts
 	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
 		DMNGR="xdm"
+		populatedm_virshscripts
 	else
 		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
 	fi
