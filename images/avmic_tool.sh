@@ -62,29 +62,29 @@ function pop_choice() {
 	case $POP_CHOICE in
 	1)
 		sed -i '/^WINDOWS_IMG=$IMAGES/c\WINDOWS_IMG=$IMAGES/'${vhdname}'.qcow2' ${CONFIG_LOC}
-		ISOVMSET1='^WINDOWS_ISO=$IMAGES'
-		ISOVMSET2='WINDOWS_ISO=$IMAGES'
+		ISOVMSET1='^WINDOWS_ISO=$IMAGES/iso'
+		ISOVMSET2='WINDOWS_ISO=$IMAGES/iso'
 		iso_populate
 		unset POP_CHOICE
 		;;
 	2)
 		sed -i '/^LINUX_IMG=$IMAGES/c\LINUX_IMG=$IMAGES/'${vhdname}'.qcow2' ${CONFIG_LOC}
-		ISOVMSET1='^LINUX_ISO=$IMAGES'
-		ISOVMSET2='LINUX_ISO=$IMAGES'
+		ISOVMSET1='^LINUX_ISO=$IMAGES/iso'
+		ISOVMSET2='LINUX_ISO=$IMAGES/iso'
 		iso_populate
 		unset POP_CHOICE
 		;;
 	3)
 		sed -i '/^ANDROID_IMG=$IMAGES/c\ANDROID_IMG=$IMAGES/'${vhdname}'.qcow2' ${CONFIG_LOC}
-		ISOVMSET1='^ANDROID_ISO=$IMAGES'
-		ISOVMSET2='ANDROID_ISO=$IMAGES'
+		ISOVMSET1='^ANDROID_ISO=$IMAGES/iso'
+		ISOVMSET2='ANDROID_ISO=$IMAGES/iso'
 		iso_populate
 		unset POP_CHOICE
 		;;
 	4)
 		sed -i '/^MACOS_IMG=$IMAGES/c\MACOS_IMG=$IMAGES/'${vhdname}'.qcow2' ${CONFIG_LOC}
-		ISOVMSET1='^MACOS_ISO=$IMAGES'
-		ISOVMSET2='MACOS_ISO=$IMAGES'
+		ISOVMSET1='^MACOS_ISO=$IMAGES/iso'
+		ISOVMSET2='MACOS_ISO=$IMAGES/iso'
 		iso_populate
 		unset POP_CHOICE
 		;;
@@ -129,7 +129,7 @@ function custom_os() {
 		ls -R -1 iso/
 		read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 		IMGVMSET=''${cosname}'_IMG=$IMAGES/'${vhdname}'.qcow2'
-		ISOVMSET=''${cosname}'_ISO=$IMAGES/'${isoname}''
+		ISOVMSET=''${cosname}'_ISO=$IMAGES/iso/'${isoname}''
 		echo $IMGVMSET >> ${CONFIG_LOC}
 		echo $ISOVMSET >> ${CONFIG_LOC}
 		cp ${SCRIPTS_DIR}/.vm_bp ${SCRIPTS_DIR}/"${cosname}".sh
