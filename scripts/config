@@ -19,8 +19,8 @@ VIRSH_PCI_AUDIO=
 ## PCI BUS ID
 videoid=
 audioid=
-videobusid=
-audiobusid=
+videobusid="0000:$IOMMU_GPU"
+audiobusid="0000:$IOMMU_GPU_AUDIO"
 pciaudioid=
 pciaudiobusid=
 
