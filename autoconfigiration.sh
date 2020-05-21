@@ -415,7 +415,7 @@ function virsh_create() {
 }
 
 function virgl_create() {
-	cp ${SCRIPTS_DIR}/.vm_bp ${SCRIPTS_DIR}/"${cosname}".sh
+	cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/"${cosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 }
