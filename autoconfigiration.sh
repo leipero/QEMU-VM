@@ -57,7 +57,7 @@ function checkos_install() {
 }
 
 function first_run() {
-	if if [ -f ${SCRIPTS_DIR}/.frchk ] > /dev/null 2>&1; then
+	if [ -f ${SCRIPTS_DIR}/.frchk ] > /dev/null 2>&1; then
 		notfirstrun
 	else
 		welcomescript
@@ -401,6 +401,7 @@ function customvm_create() {
 		else
 			echo "Ivalid input. No special characters allowed."
 			customvm_create
+			fi
 	else
 		echo "Ivalid input. No special characters allowed."
 		customvm_create
