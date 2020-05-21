@@ -494,6 +494,7 @@ function startupsc_custom() {
 wait
 cd ${SCRIPTS_DIR} && sudo nohup ./${cstname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstname}-vm
 		chmod +x /usr/local/bin/${cstname}-vm
+		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${cstname} VM
 Exec=/usr/local/bin/${cstname}-vm
@@ -509,6 +510,7 @@ function startupsc_macos() {
 wait
 cd ${SCRIPTS_DIR} && sudo nohup ./macos_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/macos-vm
 		chmod +x /usr/local/bin/macos-vm
+		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=MacOS VM
 Exec=/usr/local/bin/macos-vm
@@ -522,6 +524,7 @@ function vrglshortcut() {
 	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y askvrglshort
 	case $askvrglshort in
 	    	[yY][eE][sS]|[yY])
+	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=Linux VirGL VM
 Exec=${SCRIPTS_DIR}/${cstname}.sh
