@@ -385,7 +385,7 @@ function customvm_create() {
 		read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
 		if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
 			read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
-			if [[ "$cstvhdname" =~ ^[0-9]*$ ]]; then
+			if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
 				ls -R -1 ${IMAGES_DIR}/iso/
 				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
@@ -410,13 +410,13 @@ function customvm_create() {
 }
 
 function virsh_create() {
-	cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cosname}".sh
+	cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 }
 
 function virgl_create() {
-	cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/"${cosname}".sh
+	cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/${cstname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 }
@@ -519,7 +519,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
 ## VirGL
 
 function vrglshortcut() {
-	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes)" -i -e y askvrglshort
+	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y askvrglshort
 	case $askvrglshort in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) echo "[Desktop Entry]
