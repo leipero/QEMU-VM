@@ -180,7 +180,7 @@ function bootloader_setup() {
 
 function iommu_check() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
-		echo "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI."
+		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI."
 		vm_choice
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
@@ -202,8 +202,8 @@ function cpu_iommu_set() {
 
 function grub_find() {
 	echo "Searching for GRUB..."
-	GPAPT=$(find / -path  \*/etc/default/grub > /dev/null 2>&1)
-	if [[ -n $GPAPT ]]; then
+	if bootctl | grep -i "grub" > /dev/null ; then
+		GPAPT="VALUE"
 		grub_enable_iommu
 	else
 		echo "GRUB not found."
@@ -213,8 +213,8 @@ function grub_find() {
 
 function systemdb_find() {
 	echo "Searching for Systemd-boot"
-	SDBP=$(find / -path  \*/loader/entries/*.conf > /dev/null 2>&1)
-	if [[ -n $SDBP ]]; then
+	if bootctl | grep -i "systemd-boot" > /dev/null ; then
+		SDBP="$(bootctl | grep -i "source" | awk '{print $2}')"
 		systemdb_enable_iommu
 	else
 		echo "Systemd-boot not found."
@@ -559,7 +559,7 @@ RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 
 function autologintty3() {
-	echo -e "\033[1;31mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
+	echo -e "\033[1;36mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
 	sleep 1
 	mkdir -p /etc/systemd/system/getty@tty3.service.d/
 	echo "[Service]
