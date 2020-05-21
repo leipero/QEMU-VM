@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Re-write, simplification and reorganization.
 - VM icons.
 ### Fixed
+- Boot manager detection (now it's a bit more sane).
 - Typos.
 ### Removed
 - Avmic_tool (most of it's functionality is now in the script itself).
