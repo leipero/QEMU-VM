@@ -465,13 +465,16 @@ function another_os() {
 }
 
 function download_virtio() {
-	echo "NOTE: Only needed to be run once, if you already downloaded virtio drivers, you should skip this part and answer NO."
-	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] " askvirtio
+	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
 	case $askvirtio in
 	    	[yY][eE][sS]|[yY])
-		sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
-		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
-		unset askvirtio
+	    	if [ -f ${IMAGES_DIR}/iso/virtio-win.iso ] > /dev/null 2>&1; then
+			echo "Virto Windows drivers are already downloaded."
+			unset askvirtio
+		else
+			sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
+			sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
+		fi
 		;;
 	[nN][oO]|[nN])
 		unset askvirtio
@@ -500,7 +503,7 @@ Name=${cstname} VM
 Exec=/usr/local/bin/${cstname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
-	echo "Created ${cstname} VM Shortcut, you can run the vm by typing ${cstname}-vm in terminal or choosing from applications menu."
+	echo -e "\033[1;36mCreated ${cstname} VM Shortcut, you can run the vm by typing ${cstname}-vm in terminal or choosing from applications menu.\033[0m"
 }
 
 function startupsc_macos() {
@@ -571,7 +574,7 @@ function reminder() {
 	echo "Everything is Done."
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up keyboard and mouse manually for optimal performance for passthrough, otherwise they will NOT work.\033[0m"
-	echo "Read relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory."
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
 function remindergl() {
