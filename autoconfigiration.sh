@@ -372,7 +372,6 @@ function vm_choice() {
 		;;
 	4)
 		unset VM_CHOICE
-		ask_settings
 		;;
 	esac
 }
@@ -562,12 +561,16 @@ RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 
 function autologintty3() {
-	echo -e "\033[1;36mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
-	sleep 1
-	mkdir -p /etc/systemd/system/getty@tty3.service.d/
-	echo "[Service]
+	if [ -f /etc/systemd/system/getty@tty3.service.d/override.conf ] > /dev/null 2>&1; then
+		echo "TTY3 autologin already enabled."
+	else
+		echo -e "\033[1;36mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
+		sleep 1
+		mkdir -p /etc/systemd/system/getty@tty3.service.d/
+		echo "[Service]
 ExecStart=
 ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/systemd/system/getty@tty3.service.d/override.conf
+	fi
 }
 
 function reminder() {
