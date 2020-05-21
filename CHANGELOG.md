@@ -3,6 +3,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-21
+### Added
+- Custom VM creation (custom vhd, iso selection etc.).
+- Blueprint VMs for VM creation.
+- RAM detection and auto population.
+- Run check.
+### Changed
+- Re-write, simplification and reorganization.
+- VM icons.
+### Fixed
+- Typos.
+### Removed
+- Avmic_tool (most of it's functionality is now in the script itself).
+- Most of the VMs from the script folder (blueprints are enough for new VM creation, makes more sense).
+- VHD mount scripts.
+- Code supporting removed presets.
+
 ## 2020-05-20
 ### Added
 - This CHANGELOG file to hopefully serve as an evolving example of a standardized open source project CHANGELOG.

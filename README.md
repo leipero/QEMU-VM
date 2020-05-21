@@ -30,9 +30,7 @@ sudo bash autoconfiguration.sh
 - Add wayland support.
 - USB and other potential devices auto-detection.
 - Add support for other distributions of GNU/Linux.
-- Add support for other guests in both virgl and passthrough mode.
 - Automatic vBIOS extraction etc., no plan for automatic flashing since it can be risky.
-- Detecting RAM usage and dealing with hugepages (partly done).
 - Lot's of things...
 
 ## Actual passthrough and VMs scripts author

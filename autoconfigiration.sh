@@ -3,7 +3,7 @@
 export LC_ALL=C
 
 ## Check if script was executed with the root privileges.
-[[ "$EUID" -ne 0 ]] && echo "Please run with root privileges." && sleep 5 && exit 1
+[[ "$EUID" -ne 0 ]] && echo "Please run with root privileges." && sleep 1 && exit 1
 
 function welcomescript() {
 	clear
@@ -54,6 +54,38 @@ function checkos_install() {
 		echo "No compatible package manager found. Exiting..."
 		exit 1
 	fi
+}
+
+function first_run() {
+	if if [ -f ${SCRIPTS_DIR}/.frchk ] > /dev/null 2>&1; then
+		notfirstrun
+	else
+		welcomescript
+	fi
+}
+
+function notfirstrun() {
+	echo " It seems that this is not the first run of the configuration script, if your system is already configured you may"
+	echo "  wish to skip to the VM creation part. This will save some time if IOMMU groups, loaders and paths are already"
+	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
+	echo "  you may wish to run checks again and you should answer NO."
+	echo ""
+	read -r -p " Do you wish to skip to the VM creation part? [Y/n] (default: Yes) " -e -i y nfrinput
+	case $startchoice in
+	[yY][eE][sS]|[yY])
+		unset nfrinput
+		vm_choice
+		;;
+	[nN][oO]|[nN])
+		unset nfrinput
+		welcomescript
+		;;
+	*)
+		echo "Invalid input, please answer with Yes or No."
+		unset nfrinput
+		notfirstrun
+		;;
+	esac
 }
 
 ##***************************************************************************************************************************
@@ -113,21 +145,21 @@ function pacman_addgroups() {
 ## Enable early KMS.
 
 function earlykms_enable_apt() {
-	if grep -wq "${GPU1}" /etc/initramfs-tools/modules > /dev/null 2>&1; then
+	if grep -wq "${GPU}" /etc/initramfs-tools/modules > /dev/null 2>&1; then
 		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
 		echo "Enabling early KMS..."
-		echo "${GPU1}" >> /etc/initramfs-tools/modules
+		echo "${GPU}" >> /etc/initramfs-tools/modules
 		update-initramfs -u
 	fi
 }
 
 function earlykms_enable_pacman() {
-	if grep -wq "MODULES=(${GPU1}.*" /etc/mkinitcpio.conf > /dev/null 2>&1; then
+	if grep -wq "MODULES=(${GPU}.*" /etc/mkinitcpio.conf > /dev/null 2>&1; then
 		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
 		echo "Enabling early KMS..."
-		sed -i -e "s/^MODULES=(/MODULES=(${GPU1} /g" /etc/mkinitcpio.conf
+		sed -i -e "s/^MODULES=(/MODULES=(${GPU} /g" /etc/mkinitcpio.conf
 		for lnxkrnl in /etc/mkinitcpio.d/*.preset; do mkinitcpio -p "$lnxkrnl";  done
 	fi
 }
@@ -141,23 +173,20 @@ function bootloader_setup() {
 	grub_find
 	bootmgrfound
 	iommu_populate
-	ask_settings
-	checkdm_pacman_apt
 	mkscripts_exec
 	autologintty3
-	passthroughshortcuts
 	reminder
 }
 
 function iommu_check() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		echo "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI."
+		vm_choice
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
 		sleep 1
-		ask_settings
-		mkscripts_exec
+		vm_choice
 		remindergl
 		exit 1
 	fi
@@ -227,22 +256,22 @@ function bootmgrfound() {
 ##***************************************************************************************************************************
 ## Display Manager detecttion.
 
-function checkdm_pacman_apt() {
+function checkdm() {
 	if [ -f /usr/lib/systemd/system/gdm.service ] > /dev/null 2>&1; then
 		DMNGR="gdm"
-		populatedm_virshscripts
+		populatedm
 	elif [ -f /usr/lib/systemd/system/lightdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
-		populatedm_virshscripts
+		populatedm
 	elif [ -f /usr/lib/systemd/system/lxdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
-		populatedm_virshscripts
+		populatedm
 	elif [ -f /usr/lib/systemd/system/sddm.service ] > /dev/null 2>&1; then
 		DMNGR="sddm"
-		populatedm_virshscripts
+		populatedm
 	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
 		DMNGR="xdm"
-		populatedm_virshscripts
+		populatedm
 	else
 		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
 	fi
@@ -259,6 +288,8 @@ function populate_base_config() {
 	# Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+	# Set VM RAM size based on free memory
+	sudo -u $(logname) sed -i '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
 }
 
 function iommu_populate() {
@@ -296,151 +327,103 @@ function iommu_populate() {
 	sleep 1
 }
 
-function populatedm_virshscripts() {
-	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/windows_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/windows_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/linux_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/linux_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/macos_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/macos_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/vandroidx86_virsh.sh
-	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/vandroidx86_virsh.sh
-}
-
 function mkscripts_exec() {
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/linux_virgl.sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/vandroidx86_virgl.sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/linux_virsh.sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/vandroidx86_virsh.sh > /dev/null 2>&1
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
-	sudo -u $(logname) chmod +x ${IMAGES_DIR}/avmic_tool.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/windows_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/linux_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/vandroidx86_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/macos_mnt.sh
-	sudo -u $(logname) chmod +x ${MNTSCR_DIR}/zvhd_unmount.sh
 }
 
 ##***************************************************************************************************************************
-## Automatic configuration and image creation.
-
-function ask_settings() {
-	echo "Auto Configuration for VMs."
-	echo "  This creates qcow2 virtual image and populates paths,"
-	echo "  you can choose name and other options."
-	read -r -p " Do you want to start auto configuration? [Y/n] (default: Yes) " -e -i y asksettings
-	case $asksettings in
-	    	[yY][eE][sS]|[yY])
-	    	unset asksettings
-		vm_choice
-		;;
-	[nN][oO]|[nN])
-		unset asksettings
-		;;
-	*)
-		echo "Invalid input..."
-		unset asksettings
-		ask_settings
-		;;
-	esac
-}
+## Configuration and image creation.
 
 function vm_choice() {
 	echo " Choose VM Type:"
-	echo "	1) Windows"
-	echo "	2) GNU/Linux"
-	echo "	3) Android x86"
-	echo "	4) MacOS"
-	echo "	5) Exit VM Choice"
-	until [[ $VM_CHOICE =~ ^[1-5]$ ]]; do
-		read -r -p " VM type choice [1-5]: " VM_CHOICE
+	echo "	1) Custom OS (VGA passthrough)"
+	echo "	2) Custom OS (VirGL - no passthrough)"
+	echo "	3) MacOS (VGA passthrough)"
+	echo "	4) Exit VM Choice"
+	until [[ $VM_CHOICE =~ ^[1-4]$ ]]; do
+		read -r -p " VM type choice [1-4]: " VM_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
 		unset VM_CHOICE
-		windows_create
+		customvm_create
+		virsh_create
+		checkdm
+		startupsc_custom
+		download_virtio
+		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		echo "Virtual Machine Created."
 		;;
 	2)
 		unset VM_CHOICE
-		linux_create
-		startupvrglshortcut_linux
+		customvm_create
+		virgl_create
+		checkdm
+		vrglshortcut
+		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		echo "Virtual Machine Created."
 		;;
 	3)
 		unset VM_CHOICE
-		androidx86_create
-		startupvrglshortcut_androidx86
+		macos_create
+		startupsc_macos
+		echo "Virtual Machine Created."
 		;;
 	4)
-		unset VM_CHOICE
-		macos_create
-		;;
-	5)
 		unset VM_CHOICE
 		ask_settings
 		;;
 	esac
 }
 
-function windows_create() {
-	echo "Windows VM creation:"
-	read -r -p " Choose name for your VHD (e.g. windows10): " winvhdname
-	if [[ "$winvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p "Choose your VHD size (in GB, numeric only): " winvhdsize
-		if [[ "$winvhdsize" =~ ^[0-9]*$ ]]; then
-			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${winvhdname}.qcow2 ${winvhdsize}G
-			echo "Image created."
-			sudo -u $(logname) sed -i '/^WINDOWS_IMG=$IMAGES/c\WINDOWS_IMG=$IMAGES/'${winvhdname}'.qcow2' ${CONFIG_LOC}
+function customvm_create() {
+	echo "Custom Passthrough VM creation:"
+	echo "Before you continue please copy your .iso image into ${IMAGES_DIR}/iso/ directory."
+	read -r -p " Choose name for your VM: " cstname
+	if [[ "$cstname" =~ ^[a-zA-Z0-9]*$ ]]; then
+		read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
+		if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
+			read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
+			if [[ "$cstvhdname" =~ ^[0-9]*$ ]]; then
+				ls -R -1 ${IMAGES_DIR}/iso/
+				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
+				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
+				ISOVMSET=''${cstname}'_ISO=$IMAGES/iso/'${isoname}''
+				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
+				echo "Image created."
+				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
+				sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
+			else
+				echo "Invalid input, use only numerics."
+				customvm_create
+			fi
 		else
-			echo "Invalid input, use only numerics."
-			windows_create
-		fi
+			echo "Ivalid input. No special characters allowed."
+			customvm_create
 	else
 		echo "Ivalid input. No special characters allowed."
-		windows_create
-	fi
-	download_virtio
-	another_os
-}
-
-function linux_create() {
-	echo "GNU/Linux VM creation:"
-	read -r -p " Choose name for your VHD (e.g. rhe8): " linvhdname
-	if [[ "$linvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p " Choose your VHD size (in GB, numeric only): " linvhdsize
-		if [[ "$linvhdsize" =~ ^[0-9]*$ ]]; then
-			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${linvhdname}.qcow2 ${linvhdsize}G
-			echo "Image created."
-			sudo -u $(logname) sed -i '/^LINUX_IMG=$IMAGES/c\LINUX_IMG=$IMAGES/'${linvhdname}'.qcow2' ${CONFIG_LOC}
-		else
-			echo "Invalid input, use only numerics."
-			linux_create
-		fi
-	else
-		echo "Ivalid input. No special characters allowed."
-		linux_create
+		customvm_create
 	fi
 	another_os
 }
 
-function androidx86_create() {
-	echo "Android x86 VM creation:"
-	read -r -p " Choose name for your VHD (e.g. androidx86): " andvhdname
-	if [[ "$andvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p " Choose your VHD size (in GB, numeric only): " andvhdsize
-		if [[ "$andvhdsize" =~ ^[0-9]*$ ]]; then
-			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${andvhdname}.qcow2 ${andvhdsize}G
-			echo "Image created."
-			sudo -u $(logname) sed -i '/^ANDROID_IMG=$IMAGES/c\ANDROID_IMG=$IMAGES/'${andvhdname}'.qcow2' ${CONFIG_LOC}
-		else
-			echo "Invalid input, use only numerics."
-			androidx86_create
-		fi
-	else
-		echo "Ivalid input. No special characters allowed."
-		androidx86_create
-	fi
-	another_os
+function virsh_create() {
+	cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+}
+
+function virgl_create() {
+	cp ${SCRIPTS_DIR}/.vm_bp ${SCRIPTS_DIR}/"${cosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+}
+
+function populatedm() {
+	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/"${cstname}".sh
 }
 
 function macos_create() {
@@ -481,7 +464,8 @@ function another_os() {
 }
 
 function download_virtio() {
-	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
+	echo "NOTE: Only needed to be run once, if you already downloaded virtio drivers, you should skip this part and answer NO."
+	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] " askvirtio
 	case $askvirtio in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
@@ -502,84 +486,22 @@ function download_virtio() {
 ##***************************************************************************************************************************
 ## Startup Scripts and Shortcuts
 
-function passthroughshortcuts() {
-	echo " This option is necessary for successful Single GPU Passthrough, create shortcuts for OSs you have created VMs for."
-	echo " Create startup scripts and shortcuts for:"
-	echo "	1) Windows"
-	echo "	2) GNU/Linux"
-	echo "	3) Android x86 (not applicable yet)"
-	echo "	4) MacOS (untested passthrough)"
-	echo "	5) Exit selection."
-	until [[ $VM_CHOICE =~ ^[1-5]$ ]]; do
-		read -r -p " Create startup script and shortcut for [1-5]: " VM_SHS_CHOICE
-	done
-	case $VM_SHS_CHOICE in
-	1)
-		unset VM_SHS_CHOICE
-		startupscriptcreate_windows
-		;;
-	2)
-		unset VM_SHS_CHOICE
-		startupscriptcreate_linux
-		;;
-	3)
-		unset VM_SHS_CHOICE
-		startupscriptcreate_androidx86
-		;;
-	4)
-		unset VM_SHS_CHOICE
-		startupscriptcreate_macos
-		;;
-	5)
-		unset VM_SHS_CHOICE
-		passthroughshortcuts
-		;;
-	esac
-}
-
-function startupscriptcreate_windows() {
+function startupsc_custom() {
 		echo "Creating script and shortcut..."
 		sleep 1
 		echo "sudo chvt 3
 wait
-cd ${SCRIPTS_DIR} && sudo nohup ./windows_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/windows-vm
-		chmod +x /usr/local/bin/windows-vm
+cd ${SCRIPTS_DIR} && sudo nohup ./${cstname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstname}-vm
+		chmod +x /usr/local/bin/${cstname}-vm
 		sudo -u $(logname) echo "[Desktop Entry]
-Name=Windows VM
-Exec=/usr/local/bin/windows-vm
-Icon=${ICONS_DIR}/154872.svg
-Type=Application" > /home/$(logname)/.local/share/applications/Windows-VM.desktop
+Name=${cstname} VM
+Exec=/usr/local/bin/${cstname}-vm
+Icon=${ICONS_DIR}/television.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
+	echo "Created ${cstname} VM Shortcut, you can run the vm by typing ${cstname}-vm in terminal or choosing from applications menu."
 }
 
-function startupscriptcreate_linux() {
-		echo "Creating script and shortcut..."
-		sleep 1
-		echo "sudo chvt 3
-wait
-cd ${SCRIPTS_DIR} && sudo nohup ./linux_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/linux-vm
-		chmod +x /usr/local/bin/linux-vm
-		sudo -u $(logname) echo "[Desktop Entry]
-Name=Linux VM
-Exec=/usr/local/bin/linux-vm
-Icon=${ICONS_DIR}/154873.svg
-Type=Application" > /home/$(logname)/.local/share/applications/Linux-VM.desktop
-}
-
-function startupscriptcreate_androidx86() {
-		echo "Creating script and shortcut..."
-		sleep 1
-		echo "sudo chvt 3
-wait
-cd ${SCRIPTS_DIR} && sudo nohup ./vandroidx86_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/androidx86-vm
-		chmod +x /usr/local/bin/androidx86-vm
-		sudo -u $(logname) echo "[Desktop Entry]
-Name=Android x86 VM
-Exec=/usr/local/bin/androidx86-vm
-Icon=${ICONS_DIR}/154871.svg
-Type=Application" > /home/$(logname)/.local/share/applications/Androidx86-VM.desktop
-}
-
-function startupscriptcreate_macos() {
+function startupsc_macos() {
 		echo "Creating script and shortcut..."
 		sleep 1
 		echo "sudo chvt 3
@@ -595,46 +517,24 @@ Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
 
 ## VirGL
 
-function startupvrglshortcut_linux() {
-	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] " askvrglshortl
-	case $askvrglshortl in
+function vrglshortcut() {
+	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes)" -i -e y askvrglshort
+	case $askvrglshort in
 	    	[yY][eE][sS]|[yY])
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=Linux VirGL VM
-Exec=${SCRIPTS_DIR}/linux_virgl.sh
-Icon=${ICONS_DIR}/154873.svg
-Type=Application" > /home/$(logname)/.local/share/applications/linux_virgl_vm.desktop
-		unset askvrglshortl
+Exec=${SCRIPTS_DIR}/${cstname}.sh
+Icon=${ICONS_DIR}/television.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
+		unset askvrglshort
 		;;
 	[nN][oO]|[nN])
-		unset askvrglshortl
+		unset askvrglshort
 		;;
 	*)
 		echo "Invalid input..."
-		unset askvrglshortl
-		startupvrglshortcut_linux
-		;;
-	esac	
-}
-
-function startupvrglshortcut_androidx86() {
-	read -r -p " Do you want to create Android x86 VirGL shortcut? [Y/n] " askvrglshorta
-	case $askvrglshorta in
-	    	[yY][eE][sS]|[yY])
-		sudo -u $(logname) echo "[Desktop Entry]
-Name=Android x86 VirGL VM
-Exec=${SCRIPTS_DIR}/vandroidx86_virgl.sh
-Icon=${ICONS_DIR}/154871.svg
-Type=Application" > /home/$(logname)/.local/share/applications/androidx86_virgl_vm.desktop
-		unset askvrglshorta
-		;;
-	[nN][oO]|[nN])
-		unset askvrglshorta
-		;;
-	*)
-		echo "Invalid input..."
-		unset askvrglshorta
-		startupvrglshortcut_androidx86
+		unset askvrglshort
+		vrglshortcut
 		;;
 	esac	
 }
@@ -647,12 +547,12 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 IMAGES_DIR="${SCRIPT_DIR}/images"
 ICONS_DIR="${SCRIPT_DIR}/icons"
-MNTSCR_DIR="${SCRIPT_DIR}/vhd_mnt"
 CONFIG_LOC="${SCRIPTS_DIR}/config"
-## Get CPU information.
+## Get CPU and Memory information.
 CORES_NUM_GET="$(nproc)"
+RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
 ## Get GPU kernel module information.
-GPU1=$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)
+GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 
 function autologintty3() {
 	echo -e "\033[1;31mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
@@ -665,17 +565,24 @@ ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/s
 
 function reminder() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up RAM size and OS ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up keyboard and mouse manually for optimal performance for passthrough, otherwise they will NOT work.\033[0m"
 	echo "Read relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory."
 }
 
 function remindergl() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up RAM size and OS ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up OS ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
 }
 
-welcomescript
+function chk_create() {
+	touch ${SCRIPTS_DIR}/.frchk
+}
+
+##***************************************************************************************************************************
+
+first_run
+chk_create
 
 unset LC_ALL
 

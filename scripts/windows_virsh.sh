@@ -45,7 +45,8 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -device usb-host,bus=xhci.0,vendorid=$usb1_vendorid,productid=$usb1_productid,port=1 \
   -device usb-host,bus=xhci.0,vendorid=$usb2_vendorid,productid=$usb2_productid,port=2 \
   -device usb-host,bus=xhci.0,vendorid=$usb3_vendorid,productid=$usb3_productid,port=3 \
-  -drive id=disk0,if=virtio,cache=off,aio=threads,format=qcow2,file=$WINDOWS_IMG >> $LOG 2>&1 &
+  -drive id=disk0,if=virtio,cache=off,aio=threads,format=qcow2,file=$WINDOWS_IMG \
+  -drive file=$WINDOWS_ISO,index=1,media=cdrom >> $LOG 2>&1 &
 
 ## Wait for QEMU
 wait
