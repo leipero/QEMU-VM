@@ -71,7 +71,7 @@ function notfirstrun() {
 	echo "  you may wish to run checks again and you should answer NO."
 	echo ""
 	read -r -p " Do you wish to skip to the VM creation part? [Y/n] (default: Yes) " -e -i y nfrinput
-	case $startchoice in
+	case $nfrinput in
 	[yY][eE][sS]|[yY])
 		unset nfrinput
 		vm_choice
