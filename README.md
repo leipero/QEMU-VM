@@ -29,7 +29,6 @@ sudo bash autoconfiguration.sh
 - Remove terminal dependency.
 - Add wayland support.
 - USB and other potential devices auto-detection.
-- Add support for other distributions of GNU/Linux.
 - Automatic vBIOS extraction etc., no plan for automatic flashing since it can be risky.
 - Lot's of things...
 
