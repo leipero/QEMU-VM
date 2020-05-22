@@ -25,8 +25,8 @@ pciaudioid=
 pciaudiobusid=
 
 ## QEMU options
-RAM=4G
-CORES=4
+RAM=
+CORES=
 MACOS_RAM=4G
 MACOS_CORES=4
 
