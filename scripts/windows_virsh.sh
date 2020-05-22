@@ -12,8 +12,13 @@ source "${BASH_SOURCE%/*}/config"
 ## Memory lock limit
 [[ $ULIMIT != $ULIMIT_TARGET ]] && ulimit -l $ULIMIT_TARGET
 
+## Load hugepages (VM RAM in MB divided by 2+100)
+sysctl -qw vm.drop_caches=1
+sysctl -qw vm.compact_memory=1
+echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages
+
 ## Kill the Display Manager
-systemctl stop gdm
+systemctl stop $DSPMGR
 sleep 1
 
 ## Kill the console
@@ -66,8 +71,11 @@ echo 1 > /sys/class/vtconsole/vtcon0/bind
 #nvidia-xconfig --query-gpu-info > /dev/null 2>&1
 echo "efi-framebuffer.0" > /sys/bus/platform/drivers/efi-framebuffer/bind
 
+## Unload hugepages
+echo 0 > /proc/sys/vm/nr_hugepages
+
 ## Reload the Display Manager
-systemctl start gdm
+systemctl start $DSPMGR
 
 ## If libvirtd was stopped then stop it
 [[ $LIBVIRTD == "STOPPED" ]] && systemctl stop libvirtd

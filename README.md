@@ -25,8 +25,6 @@ sudo bash autoconfiguration.sh
 
 ## TODO
 - Simplify script and make less assumptions.
-- Make it more modular with possibility of directory restructure for better VM management.
-- Remove terminal dependency.
 - Add wayland support.
 - USB and other potential devices auto-detection.
 - Automatic vBIOS extraction etc., no plan for automatic flashing since it can be risky.

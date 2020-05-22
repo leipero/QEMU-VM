@@ -30,6 +30,12 @@ CORES=4
 MACOS_RAM=4G
 MACOS_CORES=4
 
+## Hugepages
+HUGEPAGES=
+
+## Display manager
+DSPMGR=
+
 ## USB DEVICE(s) ID(s)
 usb1_vendorid=0x
 usb1_productid=0x

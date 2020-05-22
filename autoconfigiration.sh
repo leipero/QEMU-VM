@@ -34,10 +34,10 @@ function welcomescript() {
 function checkos_install() {
 	if command -v apt > /dev/null 2>&1; then
 		populate_base_config
-		apt_install_dep
-		apt_addgroups
-		earlykms_enable_apt
-		bootloader_setup
+		install_dep_apt
+		addgroups_apt
+		enable_earlykms_apt
+		setup_bootloader
 	elif command -v yum > /dev/null 2>&1; then
 		echo "yum"
 	elif command -v dnf > /dev/null 2>&1; then
@@ -46,10 +46,10 @@ function checkos_install() {
 		echo "zypper"
 	elif command -v pacman > /dev/null 2>&1; then
 		populate_base_config
-		pacman_install_dep
-		pacman_addgroups
-		earlykms_enable_pacman
-		bootloader_setup
+		install_dep_pacman
+		addgroups_pacman
+		enable_earlykms_pacman
+		setup_bootloader
 	else
 		echo "No compatible package manager found. Exiting..."
 		exit 1
@@ -91,37 +91,48 @@ function notfirstrun() {
 ##***************************************************************************************************************************
 ## Install dependencies.
 
-function apt_install_dep() {
-	echo "Installing dependencies, please wait..."
-	apt-get install -y curl > /dev/null
-	apt-get install -y qemu-kvm > /dev/null
-	echo "QEMU/KVM Installed"
-	apt-get install -y libvirt-daemon-system > /dev/null
-	apt-get install -y libvirt-clients > /dev/null
-	echo "libvirt Installed"
-	apt-get install -y bridge-utils > /dev/null
-	echo "bridge-utils Installed"
-	apt-get install -y libvirglrenderer0 > /dev/null 2>&1
-	apt-get install -y libvirglrenderer1 > /dev/null 2>&1
-	echo "libvirglrenderer Installed"
-	apt-get install -y gnome-terminal > /dev/null
+function install_dep_apt() {
+	if dpkg -s qemu-kvm > /dev/null 2>&1; then
+		echo "Qemu-kvm is already installed."
+	else
+		echo "Installing qemu-kvm, please wait..."
+		apt-get install -y qemu-kvm > /dev/null 2>&1
+	fi
+	if dpkg -s libvirt-daemon-system libvirt-clients > /dev/null 2>&1; then
+		echo "Libvirt is already installed."
+	else
+		echo "Installing libvirt, please wait..."
+		apt-get install -y libvirt-daemon-system libvirt-clients > /dev/null 2>&1
+	fi
+	if dpkg -s libvirglrenderer0 libvirglrenderer1 > /dev/null 2>&1; then
+		echo "Libvirglrenderer is already installed."
+	else
+		echo "Installing libvirglrenderer, please wait..."
+		apt-get install -y libvirglrenderer0 libvirglrenderer1 > /dev/null 2>&1
+	fi
+	if dpkg -s curl bridge-utils > /dev/null 2>&1; then
+		echo "Bridge-utils are already installed."
+	else
+		echo "Installing bridge-utils, please wait..."
+		apt-get install -y curl bridge-utils > /dev/null 2>&1
+	fi
 	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
-function pacman_install_dep() {
-	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer curl gnome-terminal > /dev/null 2>&1; then
+function install_dep_pacman() {
+	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer curl > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
-		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl gnome-terminal > /dev/null
-		echo "Dependencies are installed."
+		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl > /dev/null
+		echo -e "\033[1;36mDependencies are installed.\033[0m"
 	fi
 }
 
 ##***************************************************************************************************************************
 ## Add user to groups.
 
-function apt_addgroups() {
+function addgroups_apt() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
 		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
@@ -131,7 +142,7 @@ function apt_addgroups() {
 	fi
 }
 
-function pacman_addgroups() {
+function addgroups_pacman() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
 		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
@@ -144,7 +155,7 @@ function pacman_addgroups() {
 ##***************************************************************************************************************************
 ## Enable early KMS.
 
-function earlykms_enable_apt() {
+function enable_earlykms_apt() {
 	if grep -wq "${GPU}" /etc/initramfs-tools/modules > /dev/null 2>&1; then
 		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
@@ -154,7 +165,7 @@ function earlykms_enable_apt() {
 	fi
 }
 
-function earlykms_enable_pacman() {
+function enable_earlykms_pacman() {
 	if grep -wq "MODULES=(${GPU}.*" /etc/mkinitcpio.conf > /dev/null 2>&1; then
 		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
@@ -167,18 +178,18 @@ function earlykms_enable_pacman() {
 ##***************************************************************************************************************************
 ## Enable IOMMU.
 
-function bootloader_setup() {
-	iommu_check
-	cpu_iommu_set
-	grub_find
+function setup_bootloader() {
+	check_iommu
+	set_cpu_iommu
+	find_grub
 	bootmgrfound
-	iommu_populate
+	populate_iommu
 	mkscripts_exec
 	autologintty3
 	reminder
 }
 
-function iommu_check() {
+function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
 		vm_choice
@@ -192,7 +203,7 @@ function iommu_check() {
 	fi
 }
 
-function cpu_iommu_set() {
+function set_cpu_iommu() {
 	if lscpu | grep -i "model name" | grep -iq amd ; then
 		IOMMU_CPU=amd
 	else
@@ -200,28 +211,27 @@ function cpu_iommu_set() {
 	fi
 }
 
-function grub_find() {
+function find_grub() {
 	echo "Searching for GRUB..."
-	if bootctl | grep -i "grub" > /dev/null ; then
-		GPAPT="VALUE"
-		grub_enable_iommu
+	if [ -f /etc/default/grub ] > /dev/null 2>&1; then
+		enable_iommu_grub
 	else
 		echo "GRUB not found."
-		systemdb_find
+		find_systemdb
 	fi
 }
 
-function systemdb_find() {
+function find_systemdb() {
 	echo "Searching for Systemd-boot"
 	if bootctl | grep -i "systemd-boot" > /dev/null ; then
 		SDBP="$(bootctl | grep -i "source" | awk '{print $2}')"
-		systemdb_enable_iommu
+		enable_iommu_systemdb
 	else
 		echo "Systemd-boot not found."
 	fi
 }
 
-function grub_enable_iommu() {
+function enable_iommu_grub() {
 	if grep -q "${IOMMU_CPU}_iommu=on" /etc/default/grub ; then
 		echo -e "\033[1;36mIOMMU is already enabled.\033[0m"
 	else
@@ -235,7 +245,7 @@ function grub_enable_iommu() {
 	fi
 }
 
-function systemdb_enable_iommu() {
+function enable_iommu_systemdb() {
 	if grep -q "${IOMMU_CPU}_iommu=on" ${SDBP} ; then
 		echo -e "\033[1;36mIOMMU is already enabled.\033[0m"
 	else
@@ -256,22 +266,17 @@ function bootmgrfound() {
 ##***************************************************************************************************************************
 ## Display Manager detecttion.
 
-function checkdm() {
+function check_dm() {
 	if [ -f /usr/lib/systemd/system/gdm.service ] > /dev/null 2>&1; then
 		DMNGR="gdm"
-		populatedm
 	elif [ -f /usr/lib/systemd/system/lightdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
-		populatedm
 	elif [ -f /usr/lib/systemd/system/lxdm.service ] > /dev/null 2>&1; then
 		DMNGR="lightdm"
-		populatedm
 	elif [ -f /usr/lib/systemd/system/sddm.service ] > /dev/null 2>&1; then
 		DMNGR="sddm"
-		populatedm
 	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
 		DMNGR="xdm"
-		populatedm
 	else
 		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
 	fi
@@ -290,9 +295,13 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
 	# Set VM RAM size based on free memory
 	sudo -u $(logname) sed -i '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
+	# Set VM hugepages size based on VM RAM
+	sudo -u $(logname) sed -i -e "s/^HUGEPAGES=/HUGEPAGES=${HPG}/g" ${CONFIG_LOC}
+	check_dm
+	sudo -u $(logname) sed -i -e "s/^DSPMGR=/DSPMGR=${DMNGR}/g" ${CONFIG_LOC}
 }
 
-function iommu_populate() {
+function populate_iommu() {
 	echo "Populating config file for IOMMU, please wait..."
 	sleep 1
 	# Get IOMMU groups
@@ -347,9 +356,8 @@ function vm_choice() {
 	case $VM_CHOICE in
 	1)
 		unset VM_CHOICE
-		customvm_create
-		virsh_create
-		checkdm
+		create_customvm
+		create_virsh
 		startupsc_custom
 		download_virtio
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
@@ -357,16 +365,15 @@ function vm_choice() {
 		;;
 	2)
 		unset VM_CHOICE
-		customvm_create
-		virgl_create
-		checkdm
-		vrglshortcut
+		create_customvm
+		create_virgl
+		shortcut_virgl
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		;;
 	3)
 		unset VM_CHOICE
-		macos_create
+		create_macos
 		startupsc_macos
 		echo "Virtual Machine Created."
 		;;
@@ -376,7 +383,7 @@ function vm_choice() {
 	esac
 }
 
-function customvm_create() {
+function create_customvm() {
 	echo "Custom Passthrough VM creation:"
 	echo "Before you continue please copy your .iso image into ${IMAGES_DIR}/iso/ directory."
 	read -r -p " Choose name for your VM: " cstname
@@ -395,38 +402,32 @@ function customvm_create() {
 				sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 			else
 				echo "Invalid input, use only numerics."
-				customvm_create
+				create_customvm
 			fi
 		else
 			echo "Ivalid input. No special characters allowed."
-			customvm_create
+			create_customvm
 			fi
 	else
 		echo "Ivalid input. No special characters allowed."
-		customvm_create
+		create_customvm
 	fi
 	another_os
 }
 
-function virsh_create() {
+function create_virsh() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 }
 
-function virgl_create() {
-	cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/${cstname}.sh
+function create_virgl() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/${cstname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 }
 
-function populatedm() {
-	sudo -u $(logname) sed -i '/^systemctl stop/c\systemctl stop '${DMNGR}'' ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i '/^systemctl start/c\systemctl start '${DMNGR}'' ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/"${cstname}".sh
-}
-
-function macos_create() {
+function create_macos() {
 	echo "MacOS VM creation:"
 	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
 	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
@@ -437,11 +438,11 @@ function macos_create() {
 			sudo -u $(logname) sed -i '/^MACOS_IMG=$IMAGES/c\MACOS_IMG=$IMAGES/'${macvhdname}'.qcow2' ${CONFIG_LOC}
 		else
 			echo "Invalid input, use only numerics."
-			macos_create
+			create_macos
 		fi
 	else
 		echo "Ivalid input. No special characters allowed."
-		macos_create
+		create_macos
 	fi
 	another_os
 }
@@ -522,7 +523,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
 
 ## VirGL
 
-function vrglshortcut() {
+function shortcut_virgl() {
 	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y askvrglshort
 	case $askvrglshort in
 	    	[yY][eE][sS]|[yY])
@@ -540,7 +541,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.deskto
 	*)
 		echo "Invalid input..."
 		unset askvrglshort
-		vrglshortcut
+		shortcut_virgl
 		;;
 	esac	
 }
@@ -557,6 +558,7 @@ CONFIG_LOC="${SCRIPTS_DIR}/config"
 ## Get CPU and Memory information.
 CORES_NUM_GET="$(nproc)"
 RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
+HPG="$((RAMFF / 2 * 1050))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 
