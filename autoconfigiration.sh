@@ -423,6 +423,7 @@ function create_customvm() {
 				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
 				ISOVMSET=''${cstname}'_ISO=$IMAGES/iso/'${isoname}''
+				sudo -u $(logname) echo -e "\n## ${cstname}" >> ${CONFIG_LOC}
 				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 				sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 			else
@@ -453,6 +454,7 @@ function create_virgl() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
+
 
 function create_macos() {
 	echo "MacOS VM creation:"
