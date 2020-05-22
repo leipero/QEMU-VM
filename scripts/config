@@ -36,6 +36,7 @@ HUGEPAGES=
 ## Display manager
 DSPMGR=
 
+## Input devices
 eventif01=
 eventkbd=
 eventmouse=
