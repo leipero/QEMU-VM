@@ -440,12 +440,14 @@ function create_virsh() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
 
 function create_virgl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/${cstname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
 
 function create_macos() {
