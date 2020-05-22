@@ -414,13 +414,13 @@ function create_customvm() {
 		read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
 		if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
 			read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
+			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
+			echo "Image created."
 			if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
 				ls -R -1 ${IMAGES_DIR}/iso/
 				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
 				ISOVMSET=''${cstname}'_ISO=$IMAGES/iso/'${isoname}''
-				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
-				echo "Image created."
 				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 				sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 			else
