@@ -36,15 +36,13 @@ HUGEPAGES=
 ## Display manager
 DSPMGR=
 
+eventif01=
+eventkbd=
+eventmouse=
+
 ## USB DEVICE(s) ID(s)
 usb1_vendorid=0x
 usb1_productid=0x
-usb2_vendorid=0x
-usb2_productid=0x
-usb3_vendorid=0x
-usb3_productid=0x
-usb4_vendorid=0x
-usb4_productid=0x
 
 ## Network
 TAP_INTERFACE=tap0
