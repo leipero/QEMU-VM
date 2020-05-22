@@ -381,10 +381,10 @@ function vm_choice() {
 	case $VM_CHOICE in
 	1)
 		unset VM_CHOICE
+		download_virtio
 		create_customvm
 		create_virsh
 		startupsc_custom
-		download_virtio
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		;;
