@@ -77,3 +77,5 @@ MACOS_OPTIONS="+pcid,+ssse3,+sse4.2,+popcnt,+aes,+xsave,+avx,+xsaveopt,avx2,+sme
 ## Ulimit
 ULIMIT=$(ulimit -a | grep "max locked memory" | awk '{print $6}')
 ULIMIT_TARGET=$(( $(echo $RAM | tr -d 'G')*1048576+100000 ))
+
+## CREATED MACHINES
