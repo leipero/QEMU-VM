@@ -365,7 +365,7 @@ function mkscripts_exec() {
 }
 
 ##***************************************************************************************************************************
-## Configuration and image creation.
+## VM creation and configuration.
 
 function vm_choice() {
 	echo " Choose VM Type:"
@@ -407,7 +407,7 @@ function vm_choice() {
 }
 
 function create_customvm() {
-	echo "Custom Passthrough VM creation:"
+	echo "Custom VM creation:"
 	echo "Before you continue please copy your .iso image into ${IMAGES_DIR}/iso/ directory."
 	read -r -p " Choose name for your VM: " cstname
 	if [[ "$cstname" =~ ^[a-zA-Z0-9]*$ ]]; then
@@ -516,8 +516,6 @@ function download_virtio() {
 ## Startup Scripts and Shortcuts
 
 function startupsc_custom() {
-		echo "Creating script and shortcut..."
-		sleep 1
 		echo "sudo chvt 3
 wait
 cd ${SCRIPTS_DIR} && sudo nohup ./${cstname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstname}-vm
@@ -559,6 +557,7 @@ Exec=${SCRIPTS_DIR}/${cstname}.sh
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
 		unset askvrglshort
+		echo "Shortcut created."
 		;;
 	[nN][oO]|[nN])
 		unset askvrglshort
