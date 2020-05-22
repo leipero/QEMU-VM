@@ -7,12 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Added
 - Hugepages support for passthrough VMs.
 - Apt package check to avoid unnecessary reinstallation.
+- Log file.
 ### Changed
 - Script cleaning, simplification and reorganization.
 - Moved Display Manager for all VMs to the config file, rendering VM scripts cleaner.
 ### Fixed
 - Blueprint/passthrough VMs attempted to load hugepages that did not exist, hence, VM failed to load path for RAM and consequently failed to start.
 - Grub and systemd-boot handling.
+- IMAGES path.
 ### Removed
 - Gnome terminal.
 
