@@ -32,9 +32,8 @@ sudo bash autoconfiguration.sh
 - Add support for more distributions.
 - Simplify script and make less assumptions.
 - Add wayland support.
-- USB and other potential devices auto-detection.
-- Automatic vBIOS extraction etc., no plan for automatic flashing since it can be risky.
-- Lot's of things...
+- Automatic vBIOS extraction etc..
+- Removal of MacOS script and creation of blueprint for it.
 
 ## Actual passthrough and VMs scripts author
 https://gitlab.com/YuriAlek/vfio
