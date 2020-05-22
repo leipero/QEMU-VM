@@ -218,7 +218,6 @@ function setup_bootloader() {
 	check_iommu
 	set_cpu_iommu
 	find_grub
-	bootmgrfound
 }
 
 function check_iommu() {
@@ -261,6 +260,7 @@ function find_systemdb() {
 		enable_iommu_systemdb
 	else
 		echo "Systemd-boot not found."
+		echo -e "\033[1;31mBoot Manager not found, please enable IOMMU manually in your boot manager.\033[0m"
 	fi
 }
 
@@ -285,14 +285,6 @@ function enable_iommu_systemdb() {
 		sed -i -e "s/iommu=pt//g" ${SDBP}
 		sed -i -e "/options/s/$/ ${IOMMU_CPU}_iommu=on iommu=pt/" ${SDBP}
 		echo "IOMMU line added to the Systemd-boot configuration file(s)."
-	fi
-}
-
-function bootmgrfound() {
-	if [[ -n "$GPAPT" || -n "$SDBP" ]]; then
-		echo "IOMMU enabled in Boot Manager."
-	else
-		echo -e "\033[1;31mBoot Manager not found, please enable IOMMU manually in your boot manager.\033[0m"
 	fi
 }
 
