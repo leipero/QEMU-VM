@@ -51,8 +51,8 @@ function checkos_install() {
 		enable_earlykms_pacman
 		setup_bootloader
 	else
-		echo "No compatible package manager found. Exiting..."
-		exit 1
+		echo "No compatible package manager found."
+		continue_script
 	fi
 }
 
@@ -86,6 +86,26 @@ function notfirstrun() {
 		notfirstrun
 		;;
 	esac
+}
+
+function continue_script() {
+	echo -e "\033[1;31mYou must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue.\033[0m"
+	read -r -p " Do you want to continue with script? [Y/n] " askconts
+	case $askconts in
+	    	[yY][eE][sS]|[yY])
+		check_iommu
+		remindernopkgm
+		;;
+	[nN][oO]|[nN])
+		unset askconts
+		exit 1
+		;;
+	*)
+		echo "Invalid input..."
+		unset askconts
+		continue_script
+		;;
+	esac	
 }
 
 ##***************************************************************************************************************************
@@ -183,9 +203,6 @@ function setup_bootloader() {
 	set_cpu_iommu
 	find_grub
 	bootmgrfound
-	populate_iommu
-	mkscripts_exec
-	autologintty3
 	reminder
 }
 
@@ -193,6 +210,9 @@ function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
 		vm_choice
+		populate_iommu
+		mkscripts_exec
+		autologintty3
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
@@ -585,6 +605,16 @@ function reminder() {
 function remindergl() {
 	echo "Everything is Done."
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up OS ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+}
+
+function remindernopkgm() {
+	echo "Everything is Done."
+	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages.\033[0m"
+	echo -e "\033[1;31mWARNING: You must add your user to kvm and libvirt groups on your distribution.\033[0m"
+	echo -e "\033[1;31mWARNING: You must enable eraly KMS and iommu for your GPU/system in distribution boot manager.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up keyboard and mouse manually for optimal performance for passthrough, otherwise they will NOT work.\033[0m"
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
 function chk_create() {
