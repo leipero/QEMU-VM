@@ -54,6 +54,9 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm \
   -drive id=Clover,if=none,snapshot=on,format=qcow2,file=$MACOS_CLOVER \
   -device ide-drive,bus=ide.0,drive=ISO \
   -drive id=ISO,if=none,snapshot=on,media=cdrom,file=$MACOS_ISO \
+  -object input-linux,id=kbd,evdev=/dev/input/by-id/$eventif01,grab_all=on,repeat=on \
+  -object input-linux,id=kbd2,evdev=/dev/input/by-id/$eventkbd,grab_all=on,repeat=on \
+  -object input-linux,id=mouse,evdev=/dev/input/by-id/$eventmouse \
   -device ide-drive,bus=ide.1,drive=HDD \
   -drive id=HDD,file=$MACOS_IMG,media=disk,format=qcow2,if=none >> $LOG 2>&1 &
 
