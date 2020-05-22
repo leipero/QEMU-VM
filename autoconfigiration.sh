@@ -214,12 +214,14 @@ function check_iommu() {
 		populate_iommu
 		mkscripts_exec
 		autologintty3
+		chk_create
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
 		sleep 1
 		vm_choice
 		remindergl
+		chk_create
 		exit 1
 	fi
 }
@@ -627,7 +629,6 @@ function chk_create() {
 ##***************************************************************************************************************************
 
 first_run
-chk_create
 
 unset LC_ALL
 
