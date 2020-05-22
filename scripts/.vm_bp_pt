@@ -46,6 +46,7 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1 \
   -device vfio-pci,host=$IOMMU_PCI_AUDIO \
   -drive if=pflash,format=raw,readonly,file=$OVMF \
+  -usb -device usb-mouse \
   -object input-linux,id=kbd,evdev=/dev/input/by-id/$EVENTIF01,grab_all=on,repeat=on \
   -object input-linux,id=kbd2,evdev=/dev/input/by-id/$EVENTKBD,grab_all=on,repeat=on \
   -object input-linux,id=mouse,evdev=/dev/input/by-id/$EVENTMOUSE \
