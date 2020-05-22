@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ## 2020-05-22
 ### Added
 - Hugepages support for passthrough VMs.
+- Input devices (keyboard and mouse) autodetection.
 - Apt package check to avoid unnecessary reinstallation.
+- Xterm dependency.
 - Log file.
 ### Changed
 - Script cleaning, simplification and reorganization.
@@ -15,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Blueprint/passthrough VMs attempted to load hugepages that did not exist, hence, VM failed to load path for RAM and consequently failed to start.
 - Grub and systemd-boot handling.
 - IMAGES path.
+- Passthrough shortcuts.
+- Display manager and hugepages insertion.
 ### Removed
 - Gnome terminal.
 - Windows virsh script.
