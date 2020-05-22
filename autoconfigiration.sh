@@ -622,7 +622,7 @@ function remindernopkgm() {
 }
 
 function chk_create() {
-	touch ${SCRIPTS_DIR}/.frchk
+	sudo -u $(logname) touch ${SCRIPTS_DIR}/.frchk
 }
 
 ##***************************************************************************************************************************
