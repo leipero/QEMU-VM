@@ -128,11 +128,11 @@ function install_dep_apt() {
 		echo "Installing XTERM, please wait..."
 		apt-get install -y xterm > /dev/null 2>&1
 	fi
-	if dpkg -s qemu-kvm > /dev/null 2>&1; then
+	if dpkg -s qemu-kvm ovmf > /dev/null 2>&1; then
 		echo "Qemu-kvm is already installed."
 	else
 		echo "Installing qemu-kvm, please wait..."
-		apt-get install -y qemu-kvm > /dev/null 2>&1
+		apt-get install -y qemu-kvm ovmf > /dev/null 2>&1
 	fi
 	if dpkg -s libvirt-daemon-system libvirt-clients > /dev/null 2>&1; then
 		echo "Libvirt is already installed."
@@ -156,11 +156,11 @@ function install_dep_apt() {
 }
 
 function install_dep_pacman() {
-	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer curl xterm > /dev/null 2>&1; then
+	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
-		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl xterm > /dev/null
+		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm > /dev/null
 		echo -e "\033[1;36mDependencies are installed.\033[0m"
 	fi
 }
@@ -326,9 +326,9 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 	## Set input devices settings in config file
-	sudo -u $(logname) sed -i -e '/^EVENTIF01=/c\EVENTIF01='${eif01}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^EVENTKBD=/c\EVENTKBD='${ekbd}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^EVENTMOUSE=/c\EVENTMOUSE='${emouse}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTIF01=/c\EVENTIF01='${EIF01}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTKBD=/c\EVENTKBD='${EKBD}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTMOUSE=/c\EVENTMOUSE='${EMOUSE}'' ${CONFIG_LOC}
 }
 
 function populate_iommu() {
@@ -588,9 +588,9 @@ HPG="$(( (RAMFF * 1050) / 2))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 ## Get input devices information
-eif01=$(ls /dev/input/by-id/ | grep -i "event-if01")
-ekbd=$(ls /dev/input/by-id/ | grep -i "event-kbd")
-emouse=$(ls /dev/input/by-id/ | grep -i "event-mouse")
+EIF01=$(ls /dev/input/by-id/ | grep -i "event-if01")
+EKBD=$(ls /dev/input/by-id/ | grep -i "event-kbd")
+EMOUSE=$(ls /dev/input/by-id/ | grep -i "event-mouse")
 
 function autologintty3() {
 	if [ -f /etc/systemd/system/getty@tty3.service.d/override.conf ] > /dev/null 2>&1; then
