@@ -320,24 +320,28 @@ function check_dm() {
 ## Populate config file and scripts.
 
 function populate_base_config() {
-	# Populate config paths
+	## Populate config paths
 	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
-	# Set number of cores in the config file
+	## Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
-	# Set VM RAM size based on free memory
+	## Set VM RAM size based on free memory
 	sudo -u $(logname) sed -i '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
-	# Set VM hugepages size based on VM RAM
+	## Set VM hugepages size based on VM RAM
 	sudo -u $(logname) sed -i -e '/^HUGEPAGES=/c\HUGEPAGES='${HPG}'' ${CONFIG_LOC}
 	check_dm
 	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
+	## Set input devices settings in config file
+	sudo -u $(logname) sed -i -e '/^eventif01=/c\eventif01='${eif01}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^eventkbd=/c\eventkbd='${ekbd}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^eventmouse=/c\eventmouse='${emouse}'' ${CONFIG_LOC}
 }
 
 function populate_iommu() {
 	echo "Populating config file for IOMMU, please wait..."
-	# Get IOMMU groups
+	## Get IOMMU groups
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
 	IOMMU_GPU_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/^[ \t]*//' | head -c 7)"
 	IOMMU_GPU_AUDIO_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDMI" | sed -e 's/^[ \t]*//' | head -c 7)"
@@ -591,6 +595,10 @@ RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
 HPG="$(( (RAMFF * 1050) / 2))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
+## Get input devices information
+eif01=$(ls /dev/input/by-id/ | grep -i "event-if01")
+ekbd=$(ls /dev/input/by-id/ | grep -i "event-kbd")
+emouse=$(ls /dev/input/by-id/ | grep -i "event-mouse")
 
 function autologintty3() {
 	if [ -f /etc/systemd/system/getty@tty3.service.d/override.conf ] > /dev/null 2>&1; then
