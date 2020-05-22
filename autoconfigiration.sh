@@ -71,6 +71,7 @@ function first_run() {
 }
 
 function notfirstrun() {
+	clear
 	echo " It seems that this is not the first run of the configuration script, if your system is already configured you may"
 	echo "  wish to skip to the VM creation part. This will save some time if IOMMU groups, loaders and paths are already"
 	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
