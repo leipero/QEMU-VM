@@ -326,9 +326,9 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 	## Set input devices settings in config file
-	sudo -u $(logname) sed -i -e '/^eventif01=/c\eventif01='${eif01}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^eventkbd=/c\eventkbd='${ekbd}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^eventmouse=/c\eventmouse='${emouse}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTIF01=/c\EVENTIF01='${eif01}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTKBD=/c\EVENTKBD='${ekbd}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^EVENTMOUSE=/c\EVENTMOUSE='${emouse}'' ${CONFIG_LOC}
 }
 
 function populate_iommu() {
