@@ -210,10 +210,9 @@ function setup_bootloader() {
 function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
-		vm_choice
 		populate_iommu
-		mkscripts_exec
 		autologintty3
+		vm_choice
 		chk_create
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
@@ -303,7 +302,7 @@ function check_dm() {
 	else
 		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
 	fi
-	echo "Virsh scripts populated with \"${DMNGR}\" display manager."
+	echo "Done."
 }
 
 ##***************************************************************************************************************************
@@ -322,6 +321,8 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e "s/^HUGEPAGES=/HUGEPAGES=${HPG}/g" ${CONFIG_LOC}
 	check_dm
 	sudo -u $(logname) sed -i -e "s/^DSPMGR=/DSPMGR=${DMNGR}/g" ${CONFIG_LOC}
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 }
 
 function populate_iommu() {
@@ -357,11 +358,6 @@ function populate_iommu() {
 	sudo -u $(logname) sed -i '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
 	echo "Config file populated with IOMMU settings."
 	sleep 1
-}
-
-function mkscripts_exec() {
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 }
 
 ##***************************************************************************************************************************
