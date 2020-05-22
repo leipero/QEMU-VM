@@ -38,6 +38,9 @@ function checkos_install() {
 		addgroups_apt
 		enable_earlykms_apt
 		setup_bootloader
+		vm_choice
+		chk_create
+		reminder
 	elif command -v yum > /dev/null 2>&1; then
 		echo "yum"
 	elif command -v dnf > /dev/null 2>&1; then
@@ -50,6 +53,9 @@ function checkos_install() {
 		addgroups_pacman
 		enable_earlykms_pacman
 		setup_bootloader
+		vm_choice
+		chk_create
+		reminder
 	else
 		echo "No compatible package manager found."
 		continue_script
@@ -95,7 +101,10 @@ function continue_script() {
 	    	[yY][eE][sS]|[yY])
 	    	populate_base_config
 		check_iommu
+		vm_choice
+		chk_create
 		remindernopkgm
+		exit 1
 		;;
 	[nN][oO]|[nN])
 		unset askconts
@@ -204,7 +213,6 @@ function setup_bootloader() {
 	set_cpu_iommu
 	find_grub
 	bootmgrfound
-	reminder
 }
 
 function check_iommu() {
@@ -212,8 +220,6 @@ function check_iommu() {
 		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
 		populate_iommu
 		autologintty3
-		vm_choice
-		chk_create
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
