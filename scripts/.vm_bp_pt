@@ -46,10 +46,9 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1 \
   -device vfio-pci,host=$IOMMU_PCI_AUDIO \
   -drive if=pflash,format=raw,readonly,file=$OVMF \
-  -device qemu-xhci,id=xhci,p2=4 \
-  -device usb-host,bus=xhci.0,vendorid=$usb1_vendorid,productid=$usb1_productid,port=1 \
-  -device usb-host,bus=xhci.0,vendorid=$usb2_vendorid,productid=$usb2_productid,port=2 \
-  -device usb-host,bus=xhci.0,vendorid=$usb3_vendorid,productid=$usb3_productid,port=3 \
+  -object input-linux,id=kbd,evdev=/dev/input/by-id/$eventif01,grab_all=on,repeat=on \
+  -object input-linux,id=kbd2,evdev=/dev/input/by-id/$eventkbd,grab_all=on,repeat=on \
+  -object input-linux,id=mouse,evdev=/dev/input/by-id/$eventmouse \
   -drive id=disk0,if=virtio,cache=off,aio=threads,format=qcow2,file=$DUMMY_IMG \
   -drive file=$DUMMY_ISO,index=1,media=cdrom >> $LOG 2>&1 &
 
