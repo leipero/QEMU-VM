@@ -455,7 +455,6 @@ function create_virgl() {
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
 
-
 function create_macos() {
 	echo "MacOS VM creation:"
 	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
