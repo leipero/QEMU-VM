@@ -377,26 +377,30 @@ function vm_choice() {
 	case $VM_CHOICE in
 	1)
 		unset VM_CHOICE
-		download_virtio
 		create_customvm
 		create_virsh
+		download_virtio
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
+		another_os
 		;;
 	2)
 		unset VM_CHOICE
 		create_customvm
 		create_virgl
+		download_virtio
 		shortcut_virgl
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
+		another_os
 		;;
 	3)
 		unset VM_CHOICE
 		create_macos
 		startupsc_macos
 		echo "Virtual Machine Created."
+		another_os
 		;;
 	4)
 		unset VM_CHOICE
@@ -434,7 +438,6 @@ function create_customvm() {
 		echo "Ivalid input. No special characters allowed."
 		create_customvm
 	fi
-	another_os
 }
 
 function create_virsh() {
@@ -468,7 +471,6 @@ function create_macos() {
 		echo "Ivalid input. No special characters allowed."
 		create_macos
 	fi
-	another_os
 }
 
 function another_os() {
