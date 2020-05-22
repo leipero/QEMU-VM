@@ -615,7 +615,6 @@ ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/s
 function reminder() {
 	echo "Everything is Done."
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up keyboard and mouse manually for optimal performance for passthrough, otherwise they will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
@@ -626,11 +625,10 @@ function remindergl() {
 
 function remindernopkgm() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages.\033[0m"
+	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
 	echo -e "\033[1;31mWARNING: You must add your user to kvm and libvirt groups on your distribution.\033[0m"
 	echo -e "\033[1;31mWARNING: You must enable eraly KMS and iommu for your GPU/system in distribution boot manager.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up keyboard and mouse manually for optimal performance for passthrough, otherwise they will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
