@@ -529,11 +529,10 @@ Name=${cstname} VM
 Exec=xterm -e ${cstname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
-	echo -e "\033[1;36mCreated ${cstname} VM Shortcut, you can run the vm by typing ${cstname}-vm in terminal or choosing from applications menu.\033[0m"
+	echo -e "\033[1;36mCreated ${cstname} VM startup script, you can run the vm by typing \"${cstname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function startupsc_macos() {
-		echo "Creating script and shortcut..."
 		echo "sudo chvt 3
 wait
 cd ${SCRIPTS_DIR} && sudo nohup ./macos_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/macos-vm
@@ -606,13 +605,13 @@ ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/s
 
 function reminder() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
 function remindergl() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up OS ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 }
 
 function remindernopkgm() {
@@ -620,7 +619,7 @@ function remindernopkgm() {
 	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
 	echo -e "\033[1;31mWARNING: You must add your user to kvm and libvirt groups on your distribution.\033[0m"
 	echo -e "\033[1;31mWARNING: You must enable eraly KMS and iommu for your GPU/system in distribution boot manager.\033[0m"
-	echo -e "\033[1;31mIMPORTANT NOTE: You have to set up ISO image paths manually in config file (scripts folder), otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
