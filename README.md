@@ -12,7 +12,7 @@ Anything other than me having fun, included but not limited to the actual functi
 Script requires superuser.
  Get:
 ```
-git clone https://github.com/leipero/vfio-autocfg.git
+git clone https://github.com/leipero/vfio-autocfg.git && cd vfio-autocfg
 ```
  Run:
 ```
