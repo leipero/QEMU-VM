@@ -93,6 +93,7 @@ function continue_script() {
 	read -r -p " Do you want to continue with script? [Y/n] " askconts
 	case $askconts in
 	    	[yY][eE][sS]|[yY])
+	    	populate_base_config
 		check_iommu
 		remindernopkgm
 		;;
@@ -309,7 +310,7 @@ function check_dm() {
 function populate_base_config() {
 	# Populate config paths
 	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPTS_DIR}'/images' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
 	# Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
