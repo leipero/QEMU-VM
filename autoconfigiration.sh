@@ -122,6 +122,12 @@ function continue_script() {
 ## Install dependencies.
 
 function install_dep_apt() {
+	if dpkg -s xterm > /dev/null 2>&1; then
+		echo "XTERM is already installed."
+	else
+		echo "Installing XTERM, please wait..."
+		apt-get install -y xterm > /dev/null 2>&1
+	fi
 	if dpkg -s qemu-kvm > /dev/null 2>&1; then
 		echo "Qemu-kvm is already installed."
 	else
@@ -150,11 +156,11 @@ function install_dep_apt() {
 }
 
 function install_dep_pacman() {
-	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer curl > /dev/null 2>&1; then
+	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer curl xterm > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
-		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl > /dev/null
+		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer curl xterm > /dev/null
 		echo -e "\033[1;36mDependencies are installed.\033[0m"
 	fi
 }
@@ -323,9 +329,9 @@ function populate_base_config() {
 	# Set VM RAM size based on free memory
 	sudo -u $(logname) sed -i '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
 	# Set VM hugepages size based on VM RAM
-	sudo -u $(logname) sed -i -e "s/^HUGEPAGES=/HUGEPAGES=${HPG}/g" ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^HUGEPAGES=/c\HUGEPAGES='${HPG}'' ${CONFIG_LOC}
 	check_dm
-	sudo -u $(logname) sed -i -e "s/^DSPMGR=/DSPMGR=${DMNGR}/g" ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 }
 
@@ -524,7 +530,7 @@ cd ${SCRIPTS_DIR} && sudo nohup ./${cstname}.sh > /tmp/nohup.log 2>&1" > /usr/lo
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${cstname} VM
-Exec=/usr/local/bin/${cstname}-vm
+Exec=xterm -e ${cstname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
 	echo -e "\033[1;36mCreated ${cstname} VM Shortcut, you can run the vm by typing ${cstname}-vm in terminal or choosing from applications menu.\033[0m"
@@ -539,7 +545,7 @@ cd ${SCRIPTS_DIR} && sudo nohup ./macos_virsh.sh > /tmp/nohup.log 2>&1" > /usr/l
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=MacOS VM
-Exec=/usr/local/bin/macos-vm
+Exec=xterm -e macos-vm
 Icon=${ICONS_DIR}/154870.svg
 Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
 }
@@ -553,7 +559,7 @@ function shortcut_virgl() {
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=Linux VirGL VM
-Exec=${SCRIPTS_DIR}/${cstname}.sh
+Exec=xterm -e ${SCRIPTS_DIR}/${cstname}.sh
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
 		unset askvrglshort
