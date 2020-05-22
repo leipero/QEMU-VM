@@ -63,19 +63,8 @@ VBIOS=$IMAGES/VBIOS.rom
 
 ## Windows
 VIRTIO=$IMAGES/iso/virtio-win.iso
-WINDOWS_ISO=$IMAGES/iso/
-WINDOWS_IMG=$IMAGES/
 OVMF=/usr/share/ovmf/x64/OVMF_CODE.fd
 OVMF_VARS=/usr/share/ovmf/x64/OVMF_VARS.fd
-
-## Linux
-LINUX_ISO=$IMAGES/iso/
-LINUX_IMG=$IMAGES/
-TEMP_ISO=$IMAGES/iso/
-
-## Android-x86
-ANDROID_ISO=$IMAGES/iso
-ANDROID_IMG=$IMAGES/
 
 ## MacOS
 MACOS_ISO=$IMAGES/iso/mojave.iso
