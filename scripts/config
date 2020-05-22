@@ -37,9 +37,9 @@ HUGEPAGES=
 DSPMGR=
 
 ## Input devices
-eventif01=
-eventkbd=
-eventmouse=
+EVENTIF01=
+EVENTKBD=
+EVENTMOUSE=
 
 ## USB DEVICE(s) ID(s)
 usb1_vendorid=0x
