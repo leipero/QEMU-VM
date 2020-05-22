@@ -71,7 +71,6 @@ function first_run() {
 }
 
 function notfirstrun() {
-	clear
 	echo " It seems that this is not the first run of the configuration script, if your system is already configured you may"
 	echo "  wish to skip to the VM creation part. This will save some time if IOMMU groups, loaders and paths are already"
 	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
@@ -224,7 +223,6 @@ function check_iommu() {
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
-		sleep 1
 		vm_choice
 		remindergl
 		chk_create
@@ -333,7 +331,6 @@ function populate_base_config() {
 
 function populate_iommu() {
 	echo "Populating config file for IOMMU, please wait..."
-	sleep 1
 	# Get IOMMU groups
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
 	IOMMU_GPU_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/^[ \t]*//' | head -c 7)"
@@ -363,7 +360,6 @@ function populate_iommu() {
 	sudo -u $(logname) sed -i '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
 	echo "Config file populated with IOMMU settings."
-	sleep 1
 }
 
 ##***************************************************************************************************************************
@@ -534,7 +530,6 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.deskto
 
 function startupsc_macos() {
 		echo "Creating script and shortcut..."
-		sleep 1
 		echo "sudo chvt 3
 wait
 cd ${SCRIPTS_DIR} && sudo nohup ./macos_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/macos-vm
@@ -594,7 +589,6 @@ function autologintty3() {
 		echo "TTY3 autologin already enabled."
 	else
 		echo -e "\033[1;36mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
-		sleep 1
 		mkdir -p /etc/systemd/system/getty@tty3.service.d/
 		echo "[Service]
 ExecStart=
