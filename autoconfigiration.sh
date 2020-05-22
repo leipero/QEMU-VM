@@ -582,7 +582,7 @@ CONFIG_LOC="${SCRIPTS_DIR}/config"
 ## Get CPU and Memory information.
 CORES_NUM_GET="$(nproc)"
 RAMFF="$(grep MemFree /proc/meminfo | awk '{print int ($2/1024/1024-1)}')"
-HPG="$((RAMFF / 2 * 1050))"
+HPG="$(( (RAMFF * 1050) / 2))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 
