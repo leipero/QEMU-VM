@@ -10,6 +10,10 @@ Anything other than me having fun, included but not limited to the actual functi
 
 ## How to use
 Script requires superuser.
+ Get:
+```
+git clone https://github.com/leipero/vfio-autocfg.git
+```
  Run:
 ```
 sudo bash autoconfiguration.sh
