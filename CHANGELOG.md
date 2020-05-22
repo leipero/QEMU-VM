@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - IMAGES path.
 ### Removed
 - Gnome terminal.
+- Windows virsh script.
 
 ## 2020-05-21
 ### Added
