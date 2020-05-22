@@ -327,7 +327,6 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e "s/^HUGEPAGES=/HUGEPAGES=${HPG}/g" ${CONFIG_LOC}
 	check_dm
 	sudo -u $(logname) sed -i -e "s/^DSPMGR=/DSPMGR=${DMNGR}/g" ${CONFIG_LOC}
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/windows_virsh.sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 }
 
