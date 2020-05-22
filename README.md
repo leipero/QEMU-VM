@@ -19,11 +19,13 @@ sudo bash autoconfiguration.sh
 [Check the wiki for more information and guides on how to make everything work](https://gitlab.com/YuriAlek/vfio/wikis/Home).
 
 ## Known problems
+- Works only for Arch and Ubuntu/Debian-base.
 - Script relies on logged user and sudo or su commands in some parts.
 - MacOS was not tested at all.
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
+- Add support for more distributions.
 - Simplify script and make less assumptions.
 - Add wayland support.
 - USB and other potential devices auto-detection.
