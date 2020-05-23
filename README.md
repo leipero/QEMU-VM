@@ -28,6 +28,7 @@ sudo bash autoconfiguration.sh
 - Add support for more distributions.
 - Simplify script and make less assumptions.
 - Add wayland support.
+- More sane GPU detection (for multi GPU support).
 - Automatic vBIOS extraction etc..
 
 ## Passthrough and VMs scripts author
