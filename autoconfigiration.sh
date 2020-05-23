@@ -63,7 +63,7 @@ function checkos_install() {
 }
 
 function first_run() {
-	if [ -f ${SCRIPTS_DIR}/.frchk ] > /dev/null 2>&1; then
+	if [ -f ${SCRIPT_DIR}/.frchk ] > /dev/null 2>&1; then
 		notfirstrun
 	else
 		welcomescript
@@ -303,7 +303,7 @@ function check_dm() {
 	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
 		DMNGR="xdm"
 	else
-		echo "No compatible display manager found. Change Display Manager related parts in the *virsh.sh scripts manually."
+		echo "No compatible display manager found. Change Display Manager related parts in the VM.sh scripts manually."
 	fi
 	echo "Done."
 }
@@ -314,6 +314,7 @@ function check_dm() {
 function populate_base_config() {
 	## Populate config paths
 	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^FIRMWARE=/c\FIRMWARE='${SCRIPT_DIR}'/firmware' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
 	## Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
@@ -324,7 +325,6 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^HUGEPAGES=/c\HUGEPAGES='${HPG}'' ${CONFIG_LOC}
 	check_dm
 	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/macos_virsh.sh
 	## Set input devices settings in config file
 	sudo -u $(logname) sed -i -e '/^EVENTIF01=/c\EVENTIF01='${EIF01}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^EVENTKBD=/c\EVENTKBD='${EKBD}'' ${CONFIG_LOC}
@@ -370,17 +370,19 @@ function populate_iommu() {
 function vm_choice() {
 	echo " Choose VM Type:"
 	echo "	1) Custom OS (VGA passthrough)"
-	echo "	2) Custom OS (VirGL - no passthrough)"
-	echo "	3) MacOS (VGA passthrough)"
-	echo "	4) Exit VM Choice"
-	until [[ $VM_CHOICE =~ ^[1-4]$ ]]; do
-		read -r -p " VM type choice [1-4]: " VM_CHOICE
+	echo "	2) Custom OS (QXL - no passthrough)"
+	echo "	3) Custom OS (Virtio - no passthrough)"
+	echo "	4) macOS (VGA passthrough)"
+	echo "	5) macOS (QXL - no passthrough)"
+	echo "	6) Exit VM Choice"
+	until [[ $VM_CHOICE =~ ^[1-6]$ ]]; do
+		read -r -p " VM type choice [1-6]: " VM_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
 		unset VM_CHOICE
 		create_customvm
-		create_virsh
+		create_pt
 		download_virtio
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
@@ -390,21 +392,43 @@ function vm_choice() {
 	2)
 		unset VM_CHOICE
 		create_customvm
-		create_virgl
+		create_qxl
 		download_virtio
-		shortcut_virgl
+		scnopt_custom
 		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		another_os
 		;;
 	3)
 		unset VM_CHOICE
+		create_customvm
+		create_virtio
+		download_virtio
+		scnopt_custom
+		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		echo "Virtual Machine Created."
+		;;
+	4)
+		unset VM_CHOICE
 		create_macos
+		download_macos
+		create_macospt
 		startupsc_macos
+		unset IMGVMSET macosname macvhdname macvhdsize
 		echo "Virtual Machine Created."
 		another_os
 		;;
-	4)
+	5)
+		unset VM_CHOICE
+		create_macos
+		download_macos
+		create_macosqxl
+		shortcut_macosqxl
+		unset IMGVMSET macosname macvhdname macvhdsize
+		echo "Virtual Machine Created."
+		another_os
+		;;
+	6)
 		unset VM_CHOICE
 		;;
 	esac
@@ -418,9 +442,8 @@ function create_customvm() {
 		read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
 		if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
 			read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
-			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
-			echo "Image created."
 			if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
+				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
 				ls -R -1 ${IMAGES_DIR}/iso/
 				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
@@ -442,31 +465,62 @@ function create_customvm() {
 	fi
 }
 
-function create_virsh() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
+function create_pt() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
 
-function create_virgl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/.vm_bp_gl ${SCRIPTS_DIR}/${cstname}.sh
+function create_virtio() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
+	echo "By default, VirGL is enabled, it only works for GNU/Linux guests, it offers freat performance but can be buggy."
+	echo "VirGL requires kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
+	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
+		case $askvirgl in
+	    	[yY][eE][sS]|[yY])
+		sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga virtio -display gtk,gl=off/g" ${SCRIPTS_DIR}/"${cstname}".sh
+		;;
+	[nN][oO]|[nN])
+		unset askvirgl
+		;;
+	*)
+		echo "Invalid input..."
+		unset askvirgl
+		create_virtio
+		;;
+	esac
+}
+
+function create_qxl() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
 }
 
 function create_macos() {
 	echo "MacOS VM creation:"
-	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
-	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
-		if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
-			sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
-			echo "Image created."
-			sudo -u $(logname) sed -i '/^MACOS_IMG=$IMAGES/c\MACOS_IMG=$IMAGES/'${macvhdname}'.qcow2' ${CONFIG_LOC}
+	read -r -p " Choose name for your MacOS VM: " macosname
+	if [[ "$macosname" =~ ^[a-zA-Z0-9]*$ ]]; then
+		read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
+		if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
+			read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
+			if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
+				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
+				IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
+				sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
+				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
+			else
+				echo "Invalid input, use only numerics."
+				create_macos
+			fi
 		else
-			echo "Invalid input, use only numerics."
+			echo "Ivalid input. No special characters allowed."
 			create_macos
 		fi
 	else
@@ -475,19 +529,49 @@ function create_macos() {
 	fi
 }
 
-function another_os() {
-	read -r -p " Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
-	case $askanotheros in
-	    	[yY][eE][sS]|[yY])
-		vm_choice
+function create_macospt() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_pt ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
+}
+
+function create_macosqxl() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_qxl ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
+}
+
+function download_macos() {
+	echo "This will download MacOS using macOS-Simple-KVM script by Foxlet"
+	echo " Choose macOS base:"
+	echo "	1) 10.14 Mojave"
+	echo "	2) 10.15 Catalina"
+	echo "	3) 10.13 High Sierra"
+	echo "	4) Base image already downloaded (from one of the options above)"
+	until [[ $macos_choice =~ ^[1-4]$ ]]; do
+		read -r -p " VM type choice [1-4]: " macos_choice
+	done
+	case $macos_choice in
+	1)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
+		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
+		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		rm -rf macOS-Simple-KVM
 		;;
-	[nN][oO]|[nN])
-		unset askanotheros
+	2)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
+		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
+		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		rm -rf macOS-Simple-KVM
 		;;
-	*)
-		echo "Invalid input..."
-		unset askanotheros
-		another_os
+	3)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..
+		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
+		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		rm -rf macOS-Simple-KVM
+		;;
+	4)
+		unset macos_choice
 		;;
 	esac
 }
@@ -515,6 +599,23 @@ function download_virtio() {
 	esac	
 }
 
+function another_os() {
+	read -r -p " Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
+	case $askanotheros in
+	    	[yY][eE][sS]|[yY])
+		vm_choice
+		;;
+	[nN][oO]|[nN])
+		unset askanotheros
+		;;
+	*)
+		echo "Invalid input..."
+		unset askanotheros
+		another_os
+		;;
+	esac
+}
+
 ##***************************************************************************************************************************
 ## Startup Scripts and Shortcuts
 
@@ -535,38 +636,45 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.deskto
 function startupsc_macos() {
 		echo "sudo chvt 3
 wait
-cd ${SCRIPTS_DIR} && sudo nohup ./macos_virsh.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/macos-vm
-		chmod +x /usr/local/bin/macos-vm
+cd ${SCRIPTS_DIR} && sudo nohup ./${macosname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${macosname}-vm
+		chmod +x /usr/local/bin/${macosname}-vm
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
-Name=MacOS VM
-Exec=xterm -e macos-vm
-Icon=${ICONS_DIR}/154870.svg
-Type=Application" > /home/$(logname)/.local/share/applications/MacOS-VM.desktop
+Name=${macosname} VM
+Exec=xterm -e ${macosname}-vm
+Icon=${ICONS_DIR}/apple.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
 }
 
-## VirGL
+function shortcut_macosqxl() {
+		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
+		sudo -u $(logname) echo "[Desktop Entry]
+Name=${macosname} VM
+Exec=${SCRIPTS_DIR}/${macosname}.sh
+Icon=${ICONS_DIR}/apple.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
+}
 
-function shortcut_virgl() {
-	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y askvrglshort
-	case $askvrglshort in
+function scnopt_custom() {
+	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y asknoptshort
+	case $asknoptshort in
 	    	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=Linux VirGL VM
-Exec=xterm -e ${SCRIPTS_DIR}/${cstname}.sh
+Exec=${SCRIPTS_DIR}/${cstname}.sh
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
-		unset askvrglshort
+		unset asknoptshort
 		echo "Shortcut created."
 		;;
 	[nN][oO]|[nN])
-		unset askvrglshort
+		unset asknoptshort
 		;;
 	*)
 		echo "Invalid input..."
-		unset askvrglshort
-		shortcut_virgl
+		unset asknoptshort
+		scnopt_custom
 		;;
 	esac	
 }
@@ -624,7 +732,7 @@ function remindernopkgm() {
 }
 
 function chk_create() {
-	sudo -u $(logname) touch ${SCRIPTS_DIR}/.frchk
+	sudo -u $(logname) touch ${SCRIPT_DIR}/.frchk
 }
 
 ##***************************************************************************************************************************
