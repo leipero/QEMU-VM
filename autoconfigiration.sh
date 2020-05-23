@@ -477,7 +477,7 @@ function create_virtio() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
-	echo "By default, VirGL is enabled, it only works for GNU/Linux guests, it offers freat performance but can be buggy."
+	echo "By default, VirGL is enabled, it needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy."
 	echo "VirGL requires kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
 	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
 		case $askvirgl in
