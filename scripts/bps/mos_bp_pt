@@ -1,0 +1,95 @@
+#!/bin/bash
+
+## Check if the script was executed as root
+[[ "$EUID" -ne 0 ]] && echo "Please run as root" && exit 1
+
+## Load the config file
+source "${BASH_SOURCE%/*}/config"
+
+## Check libvirtd
+[[ $(systemctl status libvirtd | grep running) ]] || systemctl start libvirtd && sleep 1 && LIBVIRTD=STOPPED
+
+## Memory lock limit
+[[ $ULIMIT != $ULIMIT_TARGET ]] && ulimit -l $ULIMIT_TARGET
+
+## Load hugepages (VM RAM in MB divided by 2+100)
+sysctl -qw vm.drop_caches=1
+sysctl -qw vm.compact_memory=1
+echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages
+
+## Kill the Display Manager
+systemctl stop $DSPMGR
+sleep 1
+
+## Kill the console
+echo 0 > /sys/class/vtconsole/vtcon0/bind
+echo 0 > /sys/class/vtconsole/vtcon1/bind
+echo efi-framebuffer.0 > /sys/bus/platform/drivers/efi-framebuffer/unbind
+
+## Detach DEVICES
+virsh nodedev-detach $VIRSH_GPU > /dev/null 2>&1
+virsh nodedev-detach $VIRSH_GPU_AUDIO > /dev/null 2>&1
+virsh nodedev-detach $VIRSH_PCI_AUDIO > /dev/null 2>&1
+
+## Load vfio
+modprobe vfio-pci
+
+## QEMU (VM) command
+qemu-system-x86_64 -runas $VM_USER -enable-kvm \
+  -nographic -vga none \
+  -m $RAM -mem-path /dev/hugepages \
+  -machine q35,accel=kvm \
+  -smp $CORES,sockets=1,cores=$(( $CORES / 2 )),threads=2 \
+  -cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc \
+  -device isa-applesmc,osk="$OSK" \
+  -smbios type=2 \
+  -device pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1 \
+  -device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on \
+  -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=port.1 \
+  -device vfio-pci,host=$IOMMU_PCI_AUDIO \
+  -drive if=pflash,format=raw,readonly,file=$MACOS_OVMF_CODE \
+  -drive if=pflash,format=raw,file=$MACOS_OVMF_VARS \
+  -usb -device usb-kbd -device usb-tablet \
+  -object input-linux,id=kbd,evdev=/dev/input/by-id/$EVENTIF01,grab_all=on,repeat=on \
+  -object input-linux,id=kbd2,evdev=/dev/input/by-id/$EVENTKBD,grab_all=on,repeat=on \
+  -object input-linux,id=mouse,evdev=/dev/input/by-id/$EVENTMOUSE \
+  -device ich9-intel-hda -device hda-output \
+  -netdev user,id=net0 \
+  -device e1000-82545em,netdev=net0,id=net0,mac=52:54:00:c9:18:27 \
+  -device ich9-ahci,id=sata \
+  -drive id=ESP,if=none,format=qcow2,file=$MACOS_ESP \
+  -device ide-hd,bus=sata.2,drive=ESP \
+  -drive id=InstallMedia,format=raw,if=none,file=$MACOS_ISO \
+  -device ide-hd,bus=sata.3,drive=InstallMedia \
+  -drive id=SystemDisk,if=none,file=$DUMMY_IMG \
+  -device ide-hd,bus=sata.4,drive=SystemDisk >> $LOG 2>&1 &
+
+## Wait for QEMU
+wait
+
+## Unload vfio
+modprobe -r vfio-pci
+modprobe -r vfio_iommu_type1
+modprobe -r vfio
+
+## Reattach DEVICES
+virsh nodedev-reattach $VIRSH_PCI_AUDIO > /dev/null 2>&1
+virsh nodedev-reattach $VIRSH_GPU_AUDIO > /dev/null 2>&1
+virsh nodedev-reattach $VIRSH_GPU > /dev/null 2>&1
+
+## Reload the framebuffer and console
+echo 1 > /sys/class/vtconsole/vtcon0/bind
+nvidia-xconfig --query-gpu-info > /dev/null 2>&1
+echo "efi-framebuffer.0" > /sys/bus/platform/drivers/efi-framebuffer/bind
+
+## Unload hugepages
+echo 0 > /proc/sys/vm/nr_hugepages
+
+## Reload the Display Manager
+systemctl start $DSPMGR
+
+## If libvirtd was stopped then stop it
+[[ $LIBVIRTD == "STOPPED" ]] && systemctl stop libvirtd
+
+## Restore ulimit
+ulimit -l $ULIMIT
