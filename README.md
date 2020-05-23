@@ -33,5 +33,7 @@ sudo bash autoconfiguration.sh
 - Add wayland support.
 - Automatic vBIOS extraction etc..
 
-## Actual passthrough and VMs scripts author
+## Passthrough and VMs scripts author
 https://gitlab.com/YuriAlek/vfio
+## MacOS scripts author
+https://github.com/foxlet/macOS-Simple-KVM.git
