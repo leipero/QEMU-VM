@@ -5,20 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 2020-05-23
 ### Added
-MacOS blueprint (passthrough and qxl).
-MacOS download (via macOS-Simple-KVM script by Foxlet).
-Custom VM with QXL graphics.
-Custom VM with Virtio-vga option to disable VirGL.
+- MacOS blueprint (passthrough and qxl).
+- MacOS download (via macOS-Simple-KVM script by Foxlet).
+- Custom VM with QXL graphics.
+- Custom VM with Virtio-vga option to disable VirGL.
 ### Changed
-Cleaning and reorganization of the config file.
-Cleaning and reorganization of the script.
-Moved firstrun check file handling to the scritp main directory.
-Moved blueprints to visible 'bps' directory.
+- Cleaning and reorganization of the config file.
+- Cleaning and reorganization of the script.
+- Moved firstrun check file handling to the scritp main directory.
+- Moved blueprints to visible 'bps' directory.
 ### Fixed
-MacOS VM.
-VirGL/Virtio-vga shortcuts.
+- MacOS VM.
+- VirGL/Virtio-vga shortcuts.
 ### Removed
-MacOS virsh script.
+- MacOS virsh script.
 
 ## 2020-05-22
 ### Added
