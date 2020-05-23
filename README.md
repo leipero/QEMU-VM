@@ -25,7 +25,6 @@ sudo bash autoconfiguration.sh
 ## Known problems
 - Installing dependencies, enabling early KMS and IOMMU works only for Arch and Ubuntu/Debian base.
 - Script relies on logged user and sudo or su commands in some parts.
-- MacOS was not tested at all.
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
@@ -33,7 +32,6 @@ sudo bash autoconfiguration.sh
 - Simplify script and make less assumptions.
 - Add wayland support.
 - Automatic vBIOS extraction etc..
-- Removal of MacOS script and creation of blueprint for it.
 
 ## Actual passthrough and VMs scripts author
 https://gitlab.com/YuriAlek/vfio
