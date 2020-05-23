@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Cleaning and reorganization of the config file.
 - Cleaning and reorganization of the script.
-- Moved firstrun check file handling to the scritp main directory.
+- Moved firstrun check file handling to the script main directory.
 - Moved blueprints to visible 'bps' directory.
 ### Fixed
 - MacOS VM.
