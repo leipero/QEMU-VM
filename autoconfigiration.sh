@@ -321,7 +321,6 @@ function check_dm() {
 function populate_base_config() {
 	## Populate config paths
 	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^FIRMWARE=/c\FIRMWARE='${IMAGES_DIR}'/macos/firmware' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
 	## Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
@@ -716,23 +715,26 @@ function download_macos() {
 	case $macos_choice in
 	1)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
-		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
-		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) mv -f macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
+		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
+		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
 	2)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
-		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
-		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
+		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
+		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
 	3)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..
 		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
+		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
 	4)
