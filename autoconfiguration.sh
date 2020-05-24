@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export LC_ALL=C
 
 ## Check if script was executed with the root privileges.
@@ -380,9 +379,10 @@ function vm_choice() {
 	echo "	3) Custom OS (Virtio - no passthrough)"
 	echo "	4) macOS (VGA passthrough)"
 	echo "	5) macOS (QXL - no passthrough)"
-	echo "	6) Exit VM Choice"
-	until [[ $VM_CHOICE =~ ^[1-6]$ ]]; do
-		read -r -p " VM type choice [1-6]: " VM_CHOICE
+	echo "	6) Remove existing VM"
+	echo "	7) Exit VM Choice"
+	until [[ $VM_CHOICE =~ ^[1-7]$ ]]; do
+		read -r -p " VM type choice [1-7]: " VM_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
@@ -436,6 +436,11 @@ function vm_choice() {
 		another_os
 		;;
 	6)
+		unset VM_CHOICE
+		remove_vm
+		another_os
+		;;
+	7)
 		unset VM_CHOICE
 		;;
 	esac
@@ -860,6 +865,37 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 		scnopt_custom
 		;;
 	esac	
+}
+
+##***************************************************************************************************************************
+## Remove VM
+
+function remove_vm() {
+	echo " Remove Virtual Machine."
+	read -r -p "VM name: " rmvmname
+	read -r -p "VHD name: " rmvhdname
+	echo "Will be removed (shortcuts and startup scripts will be removed as well):"
+	echo " VM: ${rmvmname}.sh"
+	echo " VHD: ${rmvhdname}.qcow2"
+		read -r -p " Remove ${rmvmname} VM? [Y/n] (default: Yes) " -e -i y rmvminput
+	case $rmvminput in
+	[yY][eE][sS]|[yY])
+		rm ${SCRIPTS_DIR}/${rmvmname}.sh
+		rm ${IMAGES_DIR}/${rmvhdname}.qcow2
+		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
+		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
+		echo "VM \"${rmvmname}\" removed."
+		;;
+	[nN][oO]|[nN])
+		unset rmvminput
+		vm_choice
+		;;
+	*)
+		echo "Invalid input, please answer with Yes or No."
+		unset rmvminput
+		remove_vm
+		;;
+	esac
 }
 
 ##***************************************************************************************************************************

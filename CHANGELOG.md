@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - GPU option for custom VM passthrough (fix for AMD Windows drivers bug).
 - Other distributions support.
 - Ask before overwrite VM/VHD.
+- Remove VM option.
 - Git dependency.
 ### Changed
 - Passthrough blueprints default GPU settings.
