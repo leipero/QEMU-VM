@@ -59,7 +59,7 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm \
   -device ich9-ahci,id=sata \
   -drive id=ESP,if=none,format=qcow2,file=$MACOS_ESP \
   -device ide-hd,bus=sata.2,drive=ESP \
-  -drive id=InstallMedia,format=raw,if=none,file=$MACOS_ISO \
+  -drive id=InstallMedia,format=raw,if=none,file=$DUMMY_ISO \
   -device ide-hd,bus=sata.3,drive=InstallMedia \
   -drive id=SystemDisk,if=none,file=$DUMMY_IMG \
   -device ide-hd,bus=sata.4,drive=SystemDisk >> $LOG 2>&1 &
