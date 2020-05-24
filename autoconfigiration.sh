@@ -456,7 +456,7 @@ function create_customvm() {
 
 function customvmname() {
 	read -r -p " Choose name for your VM: " cstvmname
-	if [[ -z "$cstvmname" =~ ^[a-zA-Z0-9]*$ ]]; then
+	if [[ "$cstvmname" =~ ^[a-zA-Z0-9]*$ ]]; then
 		if grep -wq "$cstvmname" ${CONFIG_LOC} ; then
 			read -r -p "$cstvmname VM already exist. Overwrite it? [Y/n] " askovrwrtvm
 			case $askovrwrtvm in
