@@ -13,8 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Passthrough blueprints default GPU settings.
 - Now script asks before overwriting VM and VHD.
 - Minor semantics change.
+- MacOS iso name is no longer hardcoded.
 ### Fixed
 - Should work with all GPUs now.
+- New VM entries in config are no longer repeated.
+- MacOS images are now moved properly.
 - No input entries.
 ### Removed
 - MacOS Firmware.

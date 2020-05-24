@@ -525,6 +525,9 @@ function customvhdsize() {
 		read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
 		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
+		sudo -u $(logname) sed -i '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
@@ -672,8 +675,13 @@ function macosvhdsize() {
 	if [ -z "${macvhdsize//[0-9]}" ] && [ -n "$macvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
+		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macvhdname}'.img'
+		sudo -u $(logname) sed -i '/^## '${macosname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i '/^'${macosname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i '/^'${macosname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
+		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
 		echo "Invalid input, use only numerics."
 		unset macvhdsize
@@ -684,12 +692,14 @@ function macosvhdsize() {
 function create_macospt() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_pt ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
 }
 
 function create_macosqxl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_qxl ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
 }
 
@@ -706,23 +716,23 @@ function download_macos() {
 	case $macos_choice in
 	1)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
-		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
+		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -f macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	2)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
-		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
+		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
+		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	3)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..
-		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
-		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
-		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
+		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	4)
