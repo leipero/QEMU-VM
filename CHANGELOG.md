@@ -10,7 +10,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Git dependency.
 ### Changed
 - Passthrough blueprints default GPU settings.
-- Now script asks before overwriting VM and VHD.
 - Minor semantics change.
 ### Fixed
 - Should work with all GPUs now.
