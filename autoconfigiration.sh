@@ -15,7 +15,6 @@ function welcomescript() {
 	echo "----------------------------------------------------------------"
 	echo ""
 	echo " Do you wish to continue?"
-	while true; do
 	read -r -p " I understand and wish to continue [Y/n] (default: Yes) " -e -i y startchoice
 	case $startchoice in
 	[yY][eE][sS]|[yY])
@@ -30,7 +29,6 @@ function welcomescript() {
 		welcomescript
 		;;
 	esac
-	done
 }
 
 function checkos_install() {
@@ -89,7 +87,6 @@ function notfirstrun() {
 	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
 	echo "  you may wish to run checks again and you should answer NO."
 	echo ""
-	while true; do
 	read -r -p " Do you wish to skip to the VM creation part? [Y/n] (default: Yes) " -e -i y nfrinput
 	case $nfrinput in
 	[yY][eE][sS]|[yY])
@@ -106,12 +103,10 @@ function notfirstrun() {
 		notfirstrun
 		;;
 	esac
-	done
 }
 
 function continue_script() {
 	echo -e "\033[1;31mYou must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue.\033[0m"
-	while true; do
 	read -r -p " Do you want to continue with script? [Y/n] " askconts
 	case $askconts in
 	    	[yY][eE][sS]|[yY])
@@ -132,7 +127,6 @@ function continue_script() {
 		continue_script
 		;;
 	esac
-	done
 }
 
 ##***************************************************************************************************************************
@@ -457,21 +451,7 @@ function create_customvm() {
 function customvmname() {
 	read -r -p " Choose name for your VM: " cstvmname
 	if [[ "$cstvmname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		if grep -wq "$cstvmname" ${CONFIG_LOC} ; then
-			read -r -p "$cstvmname VM already exist. Overwrite it? [Y/n] " askovrwrtvm
-			case $askovrwrtvm in
-			[yY][eE][sS]|[yY])
-				unset askovrwrtvm
-				customvhdname
-				;;
-			[nN][oO]|[nN]|*)
-				unset askovrwrtvm cstvmname
-				customvmname
-				;;
-			esac
-		else
-			customvhdname
-		fi
+		customvhdname
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset cstvmname
@@ -482,21 +462,7 @@ function customvmname() {
 function customvhdname() {
 	read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
 	if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		if [ -f ${CONFIG_LOC}/${cstvhdname}.qcow ] ; then
-			read -r -p "$cstvhdname VHD already exist. Overwrite it? [Y/n] " askovrwrtvhd
-			case $askovrwrtvhd in
-			[yY][eE][sS]|[yY])
-				unset askovrwrtvhd
-				customvhdsize
-				;;
-			[nN][oO]|[nN]|*)
-				unset askovrwrtvhd cstvhdname
-				customvhdname
-				;;
-			esac
-		else
-			customvhdsize
-		fi
+		customvhdsize
 	else
 		echo "Ivalid input. No special characters allowed."
 		customvhdname
@@ -586,21 +552,7 @@ function create_macos() {
 function macosvmname() {
 	read -r -p " Choose name for your MacOS VM: " macosname
 	if [[ "$macosname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		if grep -wq "$macosname" ${CONFIG_LOC} ; then
-			read -r -p "$macosname VM already exist. Overwrite it? [Y/n] " askovrwrtmos
-			case $askovrwrtmos in
-			[yY][eE][sS]|[yY])
-				unset askovrwrtmos
-				macosvhdname
-				;;
-			[nN][oO]|[nN]|*)
-				unset askovrwrtmos macosname
-				macosvmname
-				;;
-			esac
-		else
-			macosvhdname
-		fi
+		macosvhdname
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset macosname
@@ -611,21 +563,7 @@ function macosvmname() {
 function macosvhdname() {
 	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
 	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		if [ -f ${CONFIG_LOC}/${macvhdname}.qcow ] ; then
-		read -r -p "$macvhdname VHD already exist. Overwrite it? [Y/n] " askovrwrtmvhd
-			case $askovrwrtmvhd in
-			[yY][eE][sS]|[yY])
-				unset askovrwrtmvhd
-				macosvhdsize
-				;;
-			[nN][oO]|[nN]|*)
-				unset askovrwrtmvhd macvhdname
-				macosvhdname
-				;;
-			esac
-		else
-			macosvhdsize
-		fi
+		macosvhdsize
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset macvhdname
