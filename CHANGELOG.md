@@ -3,6 +3,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-24
+### Added
+- GPU option for custom VM passthrough (fix for AMD Windows drivers bug).
+- Other distributions support.
+- Git dependency.
+### Changed
+- Passthrough blueprints default GPU settings.
+- Now script asks before overwriting VM and VHD.
+- Minor semantics change.
+### Fixed
+- Should work with all GPUs now.
+### Removed
+- MacOS Firmware.
+- Redundant code.
+
 ## 2020-05-23
 ### Added
 - MacOS blueprint (passthrough and qxl).

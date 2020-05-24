@@ -22,7 +22,7 @@ audioid=
 videobusid="0000:$IOMMU_GPU"
 audiobusid="0000:$IOMMU_GPU_AUDIO"
 pciaudioid=
-pciaudiobusid=
+pciaudiobusid="0000:$IOMMU_PCI_AUDIO"
 
 ## QEMU options
 RAM=
@@ -55,8 +55,8 @@ VBIOS=$IMAGES/VBIOS.rom
 
 ## Windows
 VIRTIO=$IMAGES/iso/virtio-win.iso
-OVMF=/usr/share/ovmf/x64/OVMF_CODE.fd
-OVMF_VARS=/usr/share/ovmf/x64/OVMF_VARS.fd
+OVMF=/usr/share/OVMF/x64/OVMF_CODE.fd
+OVMF_VARS=/usr/share/OVMF/x64/OVMF_VARS.fd
 
 ## MacOS
 MACOS_ISO=$IMAGES/iso/BaseSystem.img

@@ -41,9 +41,9 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -cpu host,hypervisor,topoext,kvm=off,hv_relaxed,hv_spinlocks=0x1fff,hv_time,hv_vapic,hv_vendor_id=0xDEADBEEFFF \
   -rtc clock=host,base=localtime \
   -smp $CORES,sockets=1,cores=$(( $CORES / 2 )),threads=2 \
-  -device ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1 \
-  -device vfio-pci,host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on \
-  -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1 \
+  -device pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1 \
+  -device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on \
+  -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=port.1 \
   -device vfio-pci,host=$IOMMU_PCI_AUDIO \
   -drive if=pflash,format=raw,readonly,file=$OVMF \
   -usb -device usb-kbd -device usb-tablet \

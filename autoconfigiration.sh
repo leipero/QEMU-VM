@@ -15,6 +15,7 @@ function welcomescript() {
 	echo "----------------------------------------------------------------"
 	echo ""
 	echo " Do you wish to continue?"
+	while true; do
 	read -r -p " I understand and wish to continue [Y/n] (default: Yes) " -e -i y startchoice
 	case $startchoice in
 	[yY][eE][sS]|[yY])
@@ -29,28 +30,40 @@ function welcomescript() {
 		welcomescript
 		;;
 	esac
+	done
 }
 
 function checkos_install() {
 	if command -v apt > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_apt
-		addgroups_apt
+		addgroups
 		enable_earlykms_apt
 		setup_bootloader
 		vm_choice
 		chk_create
 		reminder
 	elif command -v yum > /dev/null 2>&1; then
-		echo "yum"
-	elif command -v dnf > /dev/null 2>&1; then
-		echo "dnf"
+		populate_base_config
+		install_dep_yum
+		addgroups
+		setup_bootloader
+		vm_choice
+		chk_create
+		reminder
 	elif command -v zypper > /dev/null 2>&1; then
+		populate_base_config
+		install_dep_zypper
+		addgroups
+		setup_bootloader
+		vm_choice
+		chk_create
+		reminder
 		echo "zypper"
 	elif command -v pacman > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_pacman
-		addgroups_pacman
+		addgroups
 		enable_earlykms_pacman
 		setup_bootloader
 		vm_choice
@@ -76,6 +89,7 @@ function notfirstrun() {
 	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
 	echo "  you may wish to run checks again and you should answer NO."
 	echo ""
+	while true; do
 	read -r -p " Do you wish to skip to the VM creation part? [Y/n] (default: Yes) " -e -i y nfrinput
 	case $nfrinput in
 	[yY][eE][sS]|[yY])
@@ -92,10 +106,12 @@ function notfirstrun() {
 		notfirstrun
 		;;
 	esac
+	done
 }
 
 function continue_script() {
 	echo -e "\033[1;31mYou must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue.\033[0m"
+	while true; do
 	read -r -p " Do you want to continue with script? [Y/n] " askconts
 	case $askconts in
 	    	[yY][eE][sS]|[yY])
@@ -115,18 +131,19 @@ function continue_script() {
 		unset askconts
 		continue_script
 		;;
-	esac	
+	esac
+	done
 }
 
 ##***************************************************************************************************************************
 ## Install dependencies.
 
 function install_dep_apt() {
-	if dpkg -s xterm > /dev/null 2>&1; then
+	if dpkg -s curl git xterm > /dev/null 2>&1; then
 		echo "XTERM is already installed."
 	else
 		echo "Installing XTERM, please wait..."
-		apt-get install -y xterm > /dev/null 2>&1
+		apt-get install -y curl git xterm > /dev/null 2>&1
 	fi
 	if dpkg -s qemu-kvm ovmf > /dev/null 2>&1; then
 		echo "Qemu-kvm is already installed."
@@ -146,21 +163,28 @@ function install_dep_apt() {
 		echo "Installing libvirglrenderer, please wait..."
 		apt-get install -y libvirglrenderer0 libvirglrenderer1 > /dev/null 2>&1
 	fi
-	if dpkg -s curl bridge-utils > /dev/null 2>&1; then
-		echo "Bridge-utils are already installed."
-	else
-		echo "Installing bridge-utils, please wait..."
-		apt-get install -y curl bridge-utils > /dev/null 2>&1
-	fi
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
+}
+
+function install_dep_yum() {
+	echo "Installing packages, please wait."
+	yum -yq groups install "virtualization"
+	uym -yq install curl xterm git
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
+}
+
+function install_dep_zypper() {
+	echo "Installing packages, please wait."
+	zypper -n install patterns-openSUSE-kvm_server patterns-server-kvm_tools ovmf xterm curl
 	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function install_dep_pacman() {
-	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm > /dev/null 2>&1; then
+	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
-		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm > /dev/null
+		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null
 		echo -e "\033[1;36mDependencies are installed.\033[0m"
 	fi
 }
@@ -168,22 +192,12 @@ function install_dep_pacman() {
 ##***************************************************************************************************************************
 ## Add user to groups.
 
-function addgroups_apt() {
+function addgroups() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
 		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
-		adduser $(logname) libvirt
-		adduser $(logname) kvm
-		echo "User is now a member of the required groups."
-	fi
-}
-
-function addgroups_pacman() {
-	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
-		echo -e "\033[1;36mUser is already in groups.\033[0m"
-	else
-		gpasswd -a $(logname) libvirt
-		gpasswd -a $(logname) kvm
+		usermod -a -G libvirt $(logname)
+		usermod -a -G kvm $(logname)
 		echo "User is now a member of the required groups."
 	fi
 }
@@ -305,7 +319,6 @@ function check_dm() {
 	else
 		echo "No compatible display manager found. Change Display Manager related parts in the VM.sh scripts manually."
 	fi
-	echo "Done."
 }
 
 ##***************************************************************************************************************************
@@ -314,7 +327,7 @@ function check_dm() {
 function populate_base_config() {
 	## Populate config paths
 	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^FIRMWARE=/c\FIRMWARE='${SCRIPT_DIR}'/firmware' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i '/^FIRMWARE=/c\FIRMWARE='${IMAGES_DIR}'/macos/firmware' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
 	## Set number of cores in the config file
 	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
@@ -383,9 +396,10 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		create_pt
+		askgpu_custom_pt
 		download_virtio
 		startupsc_custom
-		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -395,7 +409,7 @@ function vm_choice() {
 		create_qxl
 		download_virtio
 		scnopt_custom
-		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -405,7 +419,7 @@ function vm_choice() {
 		create_virtio
 		download_virtio
 		scnopt_custom
-		unset IMGVMSET ISOVMSET cstname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		;;
 	4)
@@ -437,52 +451,114 @@ function vm_choice() {
 function create_customvm() {
 	echo "Custom VM creation:"
 	echo "Before you continue please copy your .iso image into ${IMAGES_DIR}/iso/ directory."
-	read -r -p " Choose name for your VM: " cstname
-	if [[ "$cstname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
-		if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-			read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
-			if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
-				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
-				ls -R -1 ${IMAGES_DIR}/iso/
-				read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
-				IMGVMSET=''${cstname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
-				ISOVMSET=''${cstname}'_ISO=$IMAGES/iso/'${isoname}''
-				sudo -u $(logname) echo -e "\n## ${cstname}" >> ${CONFIG_LOC}
-				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
-				sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
-			else
-				echo "Invalid input, use only numerics."
-				create_customvm
-			fi
+	customvmname
+}
+
+function customvmname() {
+	read -r -p " Choose name for your VM: " cstvmname
+	if [[ -z "$cstvmname" =~ ^[a-zA-Z0-9]*$ ]]; then
+		if grep -wq "$cstvmname" ${CONFIG_LOC} ; then
+			read -r -p "$cstvmname VM already exist. Overwrite it? [Y/n] " askovrwrtvm
+			case $askovrwrtvm in
+			[yY][eE][sS]|[yY])
+				unset askovrwrtvm
+				customvhdname
+				;;
+			[nN][oO]|[nN]|*)
+				unset askovrwrtvm cstvmname
+				customvmname
+				;;
+			esac
 		else
-			echo "Ivalid input. No special characters allowed."
-			create_customvm
-			fi
+			customvhdname
+		fi
 	else
 		echo "Ivalid input. No special characters allowed."
-		create_customvm
+		unset cstvmname
+		customvmname
+	fi
+}
+
+function customvhdname() {
+	read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
+	if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
+		if [ -f ${CONFIG_LOC}/${cstvhdname}.qcow ] ; then
+			read -r -p "$cstvhdname VHD already exist. Overwrite it? [Y/n] " askovrwrtvhd
+			case $askovrwrtvhd in
+			[yY][eE][sS]|[yY])
+				unset askovrwrtvhd
+				customvhdsize
+				;;
+			[nN][oO]|[nN]|*)
+				unset askovrwrtvhd cstvhdname
+				customvhdname
+				;;
+			esac
+		else
+			customvhdsize
+		fi
+	else
+		echo "Ivalid input. No special characters allowed."
+		customvhdname
+	fi
+}
+
+function customvhdsize() {
+	read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
+	if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
+		ls -R -1 ${IMAGES_DIR}/iso/
+		read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
+		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
+		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
+		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
+		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
+	else
+		echo "Invalid input, use only numerics."
+		unset cstvhdsize
+		customvhdsize
 	fi
 }
 
 function create_pt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_pt ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+}
+
+function askgpu_custom_pt() {
+	echo "GPU Passthrough choice."
+	echo "	1) Default (should work with most GPUs)"
+	echo "	2) AMD (workaround for Windows driver bug)"
+	until [[ $askgpupt =~ ^[1-2]$ ]]; do
+		read -r -p "Choose device to pass [1-2]: " -e -i 1 askgpupt
+	done
+	case $askgpupt in
+	1)
+		unset askgpupt
+		;;
+	2)
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
+		;;
+	esac
 }
 
 function create_virtio() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 	echo "By default, VirGL is enabled, it needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy."
 	echo "VirGL requires kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
 	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
 		case $askvirgl in
-	    	[yY][eE][sS]|[yY])
-		sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga virtio -display gtk,gl=off/g" ${SCRIPTS_DIR}/"${cstname}".sh
+	[yY][eE][sS]|[yY])
+		sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga virtio -display gtk,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	[nN][oO]|[nN])
 		unset askvirgl
@@ -496,36 +572,78 @@ function create_virtio() {
 }
 
 function create_qxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstname}_IMG/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstname}_ISO/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 }
 
 function create_macos() {
 	echo "MacOS VM creation:"
+	macosvmname
+}
+function macosvmname() {
 	read -r -p " Choose name for your MacOS VM: " macosname
 	if [[ "$macosname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
-		if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-			read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
-			if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
-				sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
-				IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
-				sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
-				sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
-			else
-				echo "Invalid input, use only numerics."
-				create_macos
-			fi
+		if grep -wq "$macosname" ${CONFIG_LOC} ; then
+			read -r -p "$macosname VM already exist. Overwrite it? [Y/n] " askovrwrtmos
+			case $askovrwrtmos in
+			[yY][eE][sS]|[yY])
+				unset askovrwrtmos
+				macosvhdname
+				;;
+			[nN][oO]|[nN]|*)
+				unset askovrwrtmos macosname
+				macosvmname
+				;;
+			esac
 		else
-			echo "Ivalid input. No special characters allowed."
-			create_macos
+			macosvhdname
 		fi
 	else
 		echo "Ivalid input. No special characters allowed."
-		create_macos
+		unset macosname
+		macosvmname
+	fi
+}
+
+function macosvhdname() {
+	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
+	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
+		if [ -f ${CONFIG_LOC}/${macvhdname}.qcow ] ; then
+		read -r -p "$macvhdname VHD already exist. Overwrite it? [Y/n] " askovrwrtmvhd
+			case $askovrwrtmvhd in
+			[yY][eE][sS]|[yY])
+				unset askovrwrtmvhd
+				macosvhdsize
+				;;
+			[nN][oO]|[nN]|*)
+				unset askovrwrtmvhd macvhdname
+				macosvhdname
+				;;
+			esac
+		else
+			macosvhdsize
+		fi
+	else
+		echo "Ivalid input. No special characters allowed."
+		unset macvhdname
+		macosvhdname
+	fi
+}
+
+function macosvhdsize() {
+	read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
+	if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
+		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
+		sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
+	else
+		echo "Invalid input, use only numerics."
+		unset macvhdsize
+		macosvhdsize
 	fi
 }
 
@@ -556,18 +674,21 @@ function download_macos() {
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
 		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	2)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
 		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	3)
 		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..
 		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
+		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	4)
@@ -622,15 +743,15 @@ function another_os() {
 function startupsc_custom() {
 		echo "sudo chvt 3
 wait
-cd ${SCRIPTS_DIR} && sudo nohup ./${cstname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstname}-vm
-		chmod +x /usr/local/bin/${cstname}-vm
+cd ${SCRIPTS_DIR} && sudo nohup ./${cstvmname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstvmname}-vm
+		chmod +x /usr/local/bin/${cstvmname}-vm
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
-Name=${cstname} VM
-Exec=xterm -e ${cstname}-vm
+Name=${cstvmname} VM
+Exec=xterm -e ${cstvmname}-vm
 Icon=${ICONS_DIR}/television.svg
-Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
-	echo -e "\033[1;36mCreated ${cstname} VM startup script, you can run the vm by typing \"${cstname}-vm\" in terminal or choosing from applications menu.\033[0m"
+Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
+	echo -e "\033[1;36mCreated ${cstvmname} VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function startupsc_macos() {
@@ -661,10 +782,10 @@ function scnopt_custom() {
 	    	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
-Name=Linux VirGL VM
-Exec=${SCRIPTS_DIR}/${cstname}.sh
+Name=${cstvmname} VM
+Exec=${SCRIPTS_DIR}/${cstvmname}.sh
 Icon=${ICONS_DIR}/television.svg
-Type=Application" > /home/$(logname)/.local/share/applications/${cstname}.desktop
+Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
 		unset asknoptshort
 		echo "Shortcut created."
 		;;
