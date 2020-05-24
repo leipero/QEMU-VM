@@ -450,8 +450,8 @@ function create_customvm() {
 
 function customvmname() {
 	read -r -p " Choose name for your VM: " cstvmname
-	if [[ "$cstvmname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		customvhdname
+	if [ -z "${cstvmname//[a-zA-Z0-9]}" ] && [ -n "$cstvmname" ]; then
+		customvmoverwrite_check
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset cstvmname
@@ -459,19 +459,67 @@ function customvmname() {
 	fi
 }
 
+function customvmoverwrite_check() {
+	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
+		echo "VM named '${cstvmname}' already exist."
+		read -r -p "Overwrite \"${cstvmname}\" VM [Y/n] " askcstovrw
+		case $askcstovrw in
+		[yY][eE][sS]|[yY])
+			unset askcstovrw
+			customvhdname
+			;;
+		[nN][oO]|[nN])
+			unset askcstovrw
+			customvmname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askcstovrw
+			customvmoverwrite_check
+			;;
+		esac
+	else
+		customvhdname
+	fi
+}
+
 function customvhdname() {
 	read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
-	if [[ "$cstvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		customvhdsize
+	if [ -z "${cstvhdname//[a-zA-Z0-9]}" ] && [ -n "$cstvhdname" ]; then
+		customvhdoverwrite_check
 	else
 		echo "Ivalid input. No special characters allowed."
 		customvhdname
 	fi
 }
 
+function customvhdoverwrite_check() {
+	if [ -f ${IMAGES_DIR}/${cstvhdname}.qcow2 ] > /dev/null 2>&1; then
+		echo "VHD named '${cstvhdname}' already exist."
+		read -r -p "Overwrite \"${cstvhdname}\" VHD [Y/n] " askcstvhdovrw
+		case $askcstvhdovrw in
+		[yY][eE][sS]|[yY])
+			unset askcstvhdovrw
+			customvhdsize
+			;;
+		[nN][oO]|[nN])
+			unset askcstvhdovrw
+			customvhdname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askcstvhdovrw
+			customvhdoverwrite_check
+			;;
+		esac
+	else
+		customvhdsize
+	fi
+}
+
 function customvhdsize() {
 	read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
-	if [[ "$cstvhdsize" =~ ^[0-9]*$ ]]; then
+	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
 		ls -R -1 ${IMAGES_DIR}/iso/
 		read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
@@ -522,7 +570,7 @@ function create_virtio() {
 	echo "By default, VirGL is enabled, it needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy."
 	echo "VirGL requires kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
 	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
-		case $askvirgl in
+	case $askvirgl in
 	[yY][eE][sS]|[yY])
 		sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga virtio -display gtk,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
@@ -551,8 +599,8 @@ function create_macos() {
 }
 function macosvmname() {
 	read -r -p " Choose name for your MacOS VM: " macosname
-	if [[ "$macosname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		macosvhdname
+	if [ -z "${macosname//[a-zA-Z0-9]}" ] && [ -n "$macosname" ]; then
+		macosvmoverwrite_check
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset macosname
@@ -560,10 +608,34 @@ function macosvmname() {
 	fi
 }
 
+function macosvmoverwrite_check() {
+	if [ -f ${SCRIPTS_DIR}/${macosname}.sh ] > /dev/null 2>&1; then
+		echo "VM named \"${macosname}\" already exist."
+		read -r -p "Overwrite '${macosname}' VM [Y/n] " askmcsovrw
+		case $askmcsovrw in
+		[yY][eE][sS]|[yY])
+			unset askmcsovrw
+			macosvhdname
+			;;
+		[nN][oO]|[nN])
+			unset askmcsovrw
+			macosvmname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askmcsovrw
+			macosvmoverwrite_check
+			;;
+		esac
+	else
+		macosvhdname
+	fi
+}
+
 function macosvhdname() {
 	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
-	if [[ "$macvhdname" =~ ^[a-zA-Z0-9]*$ ]]; then
-		macosvhdsize
+	if [ -z "${macvhdname//[a-zA-Z0-9]}" ] && [ -n "$macvhdname" ]; then
+		macosvhdoverwrite_check
 	else
 		echo "Ivalid input. No special characters allowed."
 		unset macvhdname
@@ -571,9 +643,33 @@ function macosvhdname() {
 	fi
 }
 
+function macosvhdoverwrite_check() {
+	if [ -f ${IMAGES_DIR}/${macvhdname}.qcow2 ] > /dev/null 2>&1; then
+		echo "VHD named \"${macvhdname}\" already exist."
+		read -r -p "Overwrite '${macvhdname}' VHD [Y/n] " askmcsvhdovrw
+		case $askmcsvhdovrw in
+		[yY][eE][sS]|[yY])
+			unset askmcsvhdovrw
+			macosvhdsize
+			;;
+		[nN][oO]|[nN])
+			unset askmcsvhdovrw
+			macosvhdname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askmcsvhdovrw
+			macosvhdoverwrite_check
+			;;
+		esac
+	else
+		macosvhdsize
+	fi
+}
+
 function macosvhdsize() {
 	read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
-	if [[ "$macvhdsize" =~ ^[0-9]*$ ]]; then
+	if [ -z "${macvhdsize//[0-9]}" ] && [ -n "$macvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
 		sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
@@ -600,8 +696,8 @@ function create_macosqxl() {
 function download_macos() {
 	echo "This will download MacOS using macOS-Simple-KVM script by Foxlet"
 	echo " Choose macOS base:"
-	echo "	1) 10.14 Mojave"
-	echo "	2) 10.15 Catalina"
+	echo "	1) 10.15 Catalina"
+	echo "	2) 10.14 Mojave"
 	echo "	3) 10.13 High Sierra"
 	echo "	4) Base image already downloaded (from one of the options above)"
 	until [[ $macos_choice =~ ^[1-4]$ ]]; do
@@ -609,14 +705,14 @@ function download_macos() {
 	done
 	case $macos_choice in
 	1)
-		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
 		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
 		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
 		rm -rf macOS-Simple-KVM
 		;;
 	2)
-		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
 		sudo -u $(logname) mv macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/
 		sudo -u $(logname) mv macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
 		sudo -u $(logname) mv -r macOS-Simple-KVM/firmware ${IMAGES_DIR}/macos/
@@ -703,19 +799,35 @@ Name=${macosname} VM
 Exec=xterm -e ${macosname}-vm
 Icon=${ICONS_DIR}/apple.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
+	echo -e "\033[1;36mCreated ${macosname} VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function shortcut_macosqxl() {
-		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
+	read -r -p " Do you want to create \"${macosname}\" shortcut? [Y/n] (default: Yes) " -e -i y askmcoshort
+	case $askmcoshort in
+	    	[yY][eE][sS]|[yY])
+	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${macosname} VM
 Exec=${SCRIPTS_DIR}/${macosname}.sh
 Icon=${ICONS_DIR}/apple.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
+		unset askmcoshort
+		echo "Shortcut created."
+		;;
+	[nN][oO]|[nN])
+		unset askmcoshort
+		;;
+	*)
+		echo "Invalid input..."
+		unset askmcoshort
+		shortcut_macosqxl
+		;;
+	esac	
 }
 
 function scnopt_custom() {
-	read -r -p " Do you want to create GNU/Linux VirGL shortcut? [Y/n] (default: Yes) " -e -i y asknoptshort
+	read -r -p " Do you want to create \"${cstvmname}\" shortcut? [Y/n] (default: Yes) " -e -i y asknoptshort
 	case $asknoptshort in
 	    	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
