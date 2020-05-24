@@ -13,7 +13,7 @@ git clone https://github.com/leipero/vfio-autocfg.git && cd vfio-autocfg
 ```
  Run:
 ```
-sudo bash autoconfiguration.sh
+sudo bash autoconfigiration.sh
 ```
 
 ## Wiki (Yuri Alek's page)
