@@ -48,7 +48,6 @@ LOG=
 
 ## Local path for storage
 IMAGES=
-FIRMWARE=
 
 ## VBIOS
 VBIOS=$IMAGES/VBIOS.rom
@@ -60,8 +59,8 @@ OVMF_VARS=/usr/share/OVMF/x64/OVMF_VARS.fd
 
 ## MacOS
 MACOS_ESP=$IMAGES/macos/ESP.qcow2
-MACOS_OVMF_CODE=$FIRMWARE/OVMF_CODE.fd
-MACOS_OVMF_VARS=$FIRMWARE/OVMF_VARS-1024x768.fd
+MACOS_OVMF_CODE=$IMAGES/firmware/OVMF_CODE.fd
+MACOS_OVMF_VARS=$IMAGES/firmware/OVMF_VARS-1024x768.fd
 
 ## Ulimit
 ULIMIT=$(ulimit -a | grep "max locked memory" | awk '{print $6}')
