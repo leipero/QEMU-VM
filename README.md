@@ -24,7 +24,6 @@ sudo bash autoconfiguration.sh
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
-- Fix no input entries.
 - Add ovmf search and injection.
 - Simplify script and make less assumptions.
 - Add wayland support.
