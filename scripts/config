@@ -54,8 +54,8 @@ VBIOS=/root/VBIOS.rom
 
 ## Windows
 VIRTIO=$IMAGES/iso/virtio-win.iso
-OVMF_CODE=/usr/share/OVMF/x64/OVMF_CODE.fd
-OVMF_VARS=/usr/share/OVMF/x64/OVMF_VARS.fd
+OVMF_CODE=
+OVMF_VARS=
 
 ## MacOS
 MACOS_ESP=$IMAGES/macos/ESP.qcow2
