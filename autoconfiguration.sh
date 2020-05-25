@@ -40,7 +40,6 @@ function checkos_install() {
 		setup_bootloader
 		vm_choice
 		chk_create
-		reminder
 	elif command -v yum > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_yum
@@ -49,7 +48,6 @@ function checkos_install() {
 		setup_bootloader
 		vm_choice
 		chk_create
-		reminder
 	elif command -v zypper > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_zypper
@@ -58,8 +56,6 @@ function checkos_install() {
 		setup_bootloader
 		vm_choice
 		chk_create
-		reminder
-		echo "zypper"
 	elif command -v pacman > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_pacman
@@ -69,7 +65,6 @@ function checkos_install() {
 		setup_bootloader
 		vm_choice
 		chk_create
-		reminder
 	else
 		echo "No compatible package manager found."
 		continue_script
@@ -248,7 +243,6 @@ function check_iommu() {
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
 		vm_choice
-		remindergl
 		chk_create
 		exit 1
 	fi
@@ -411,6 +405,7 @@ function vm_choice() {
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
+		reminder
 		another_os
 		;;
 	2)
@@ -421,6 +416,7 @@ function vm_choice() {
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
+		remindernpt
 		another_os
 		;;
 	3)
@@ -431,6 +427,8 @@ function vm_choice() {
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
+		remindernpt
+		another_os
 		;;
 	4)
 		unset VM_CHOICE
@@ -441,6 +439,7 @@ function vm_choice() {
 		startupsc_macos
 		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
+		reminder
 		another_os
 		;;
 	5)
@@ -451,6 +450,7 @@ function vm_choice() {
 		shortcut_macosqxl
 		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
+		remindernpt
 		another_os
 		;;
 	6)
@@ -934,11 +934,11 @@ ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/s
 
 function reminder() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
+	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios .\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
-function remindergl() {
+function remindernpt() {
 	echo "Everything is Done."
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
