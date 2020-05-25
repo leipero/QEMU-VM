@@ -26,6 +26,7 @@ sudo bash autoconfiguration.sh
 
 ## TODO
 - Fix/implement GRUB for other distributions.
+- Better way to unbind/bind VC, devices and handle DM.
 - Simplify script and make less assumptions.
 - Add wayland support.
 - More sane GPU detection (for multi GPU support).
