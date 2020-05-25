@@ -61,6 +61,7 @@ OVMF_VARS=
 MACOS_ESP=$IMAGES/macos/ESP.qcow2
 MACOS_OVMF_CODE=$IMAGES/macos/firmware/OVMF_CODE.fd
 MACOS_OVMF_VARS=$IMAGES/macos/firmware/OVMF_VARS-1024x768.fd
+OSK="ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc"
 
 ## Ulimit
 ULIMIT=$(ulimit -a | grep "max locked memory" | awk '{print $6}')
