@@ -25,6 +25,7 @@ sudo bash autoconfiguration.sh
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
+- Fix/implement GRUB for other distributions.
 - Simplify script and make less assumptions.
 - Add wayland support.
 - More sane GPU detection (for multi GPU support).

@@ -805,45 +805,7 @@ Name=${cstvmname} VM
 Exec=xterm -e ${cstvmname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
-	echo -e "\033[1;36mCreated ${cstvmname} VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu.\033[0m"
-}
-
-function startupsc_macos() {
-		echo "sudo chvt 3
-wait
-cd ${SCRIPTS_DIR} && sudo nohup ./${macosname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${macosname}-vm
-		chmod +x /usr/local/bin/${macosname}-vm
-		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
-		sudo -u $(logname) echo "[Desktop Entry]
-Name=${macosname} VM
-Exec=xterm -e ${macosname}-vm
-Icon=${ICONS_DIR}/apple.svg
-Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
-	echo -e "\033[1;36mCreated ${macosname} VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu.\033[0m"
-}
-
-function shortcut_macosqxl() {
-	read -r -p " Do you want to create \"${macosname}\" shortcut? [Y/n] (default: Yes) " -e -i y askmcoshort
-	case $askmcoshort in
-	    	[yY][eE][sS]|[yY])
-	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
-		sudo -u $(logname) echo "[Desktop Entry]
-Name=${macosname} VM
-Exec=${SCRIPTS_DIR}/${macosname}.sh
-Icon=${ICONS_DIR}/apple.svg
-Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
-		unset askmcoshort
-		echo "Shortcut created."
-		;;
-	[nN][oO]|[nN])
-		unset askmcoshort
-		;;
-	*)
-		echo "Invalid input..."
-		unset askmcoshort
-		shortcut_macosqxl
-		;;
-	esac	
+	echo -e "\033[1;36mCreated \"${cstvmname}\" VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function scnopt_custom() {
@@ -857,7 +819,7 @@ Exec=${SCRIPTS_DIR}/${cstvmname}.sh
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
 		unset asknoptshort
-		echo "Shortcut created."
+		echo "VM \"${cstvmname}\" shortcut created."
 		;;
 	[nN][oO]|[nN])
 		unset asknoptshort
@@ -866,6 +828,44 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 		echo "Invalid input..."
 		unset asknoptshort
 		scnopt_custom
+		;;
+	esac	
+}
+
+function startupsc_macos() {
+		echo "sudo chvt 3
+wait
+cd ${SCRIPTS_DIR} && sudo nohup ./${macosname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${macosname}-vm
+		chmod +x /usr/local/bin/${macosname}-vm
+		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
+		sudo -u $(logname) echo "[Desktop Entry]
+Name=${macosname} VM
+Exec=xterm -e ${macosname}-vm
+Icon=${ICONS_DIR}/apple.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
+	echo -e "\033[1;36mCreated \"${macosname}\" VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu.\033[0m"
+}
+
+function shortcut_macosqxl() {
+	read -r -p " Do you want to create \"${macosname}\" shortcut? [Y/n] (default: Yes) " -e -i y askmcoshort
+	case $askmcoshort in
+	    	[yY][eE][sS]|[yY])
+	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
+		sudo -u $(logname) echo "[Desktop Entry]
+Name=${macosname} VM
+Exec=${SCRIPTS_DIR}/${macosname}.sh
+Icon=${ICONS_DIR}/apple.svg
+Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
+		unset askmcoshort
+		echo "VM \"${macosname}\" shortcut created."
+		;;
+	[nN][oO]|[nN])
+		unset askmcoshort
+		;;
+	*)
+		echo "Invalid input..."
+		unset askmcoshort
+		shortcut_macosqxl
 		;;
 	esac	
 }
