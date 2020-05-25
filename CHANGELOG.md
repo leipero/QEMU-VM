@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - OVMF per distribution entries.
 - VM iso selection.
+- Mouse for passthrough VMs.
 ### Removed
 - VHD name choice (to speed up creation process).
 
