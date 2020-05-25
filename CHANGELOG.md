@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - README file.
 ### Fixed
 - OVMF per distribution entries.
+- VM iso selection.
+### Removed
+- VHD name choice (to speed up creation process).
 
 ## 2020-05-24
 ### Added

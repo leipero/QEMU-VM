@@ -409,7 +409,7 @@ function vm_choice() {
 		askgpu_custom_pt
 		download_virtio
 		startupsc_custom
-		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -419,7 +419,7 @@ function vm_choice() {
 		create_qxl
 		download_virtio
 		scnopt_custom
-		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -429,7 +429,7 @@ function vm_choice() {
 		create_virtio
 		download_virtio
 		scnopt_custom
-		unset IMGVMSET ISOVMSET cstvmname cstvhdname cstvhdsize isoname
+		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
 		;;
 	4)
@@ -439,7 +439,7 @@ function vm_choice() {
 		create_macospt
 		askgpu_macospt_pt
 		startupsc_macos
-		unset IMGVMSET macosname macvhdname macvhdsize
+		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -449,7 +449,7 @@ function vm_choice() {
 		download_macos
 		create_macosqxl
 		shortcut_macosqxl
-		unset IMGVMSET macosname macvhdname macvhdsize
+		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
 		another_os
 		;;
@@ -466,7 +466,7 @@ function vm_choice() {
 
 function create_customvm() {
 	echo "Custom VM creation:"
-	echo "Before you continue please copy your .iso/.img image into ${IMAGES_DIR}/iso/ directory."
+	echo "Before you continue please copy your .iso or .img image into ${IMAGES_DIR}/iso/ directory."
 	customvmname
 }
 
@@ -484,11 +484,11 @@ function customvmname() {
 function customvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
 		echo "VM named '${cstvmname}' already exist."
-		read -r -p "Overwrite \"${cstvmname}\" VM [Y/n] " askcstovrw
+		read -r -p "Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)? [Y/n] " askcstovrw
 		case $askcstovrw in
 		[yY][eE][sS]|[yY])
 			unset askcstovrw
-			customvhdname
+			customvhdsize
 			;;
 		[nN][oO]|[nN])
 			unset askcstovrw
@@ -501,73 +501,38 @@ function customvmoverwrite_check() {
 			;;
 		esac
 	else
-		customvhdname
-	fi
-}
-
-function customvhdname() {
-	read -r -p " Choose name for your VHD (e.g. vhd1): " cstvhdname
-	if [ -z "${cstvhdname//[a-zA-Z0-9]}" ] && [ -n "$cstvhdname" ]; then
-		customvhdoverwrite_check
-	else
-		echo "Ivalid input. No special characters allowed."
-		customvhdname
-	fi
-}
-
-function customvhdoverwrite_check() {
-	if [ -f ${IMAGES_DIR}/${cstvhdname}.qcow2 ] > /dev/null 2>&1; then
-		echo "VHD named '${cstvhdname}' already exist."
-		read -r -p "Overwrite \"${cstvhdname}\" VHD [Y/n] " askcstvhdovrw
-		case $askcstvhdovrw in
-		[yY][eE][sS]|[yY])
-			unset askcstvhdovrw
-			customvhdsize
-			;;
-		[nN][oO]|[nN])
-			unset askcstvhdovrw
-			customvhdname
-			;;
-		*)
-			echo "Invalid input..."
-			unset askcstvhdovrw
-			customvhdoverwrite_check
-			;;
-		esac
-	else
 		customvhdsize
 	fi
 }
 
 function customvhdsize() {
-	read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
+	read -r -p " Choose your ${cstvmname} VHD size (in GB, numeric only): " cstvhdsize
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
-		getisoname
-		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
-		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
+		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
 		sudo -u $(logname) sed -i '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
-		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
-		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
+		sudo -u $(logname) echo ${IMGVMSET} >> ${CONFIG_LOC}
 	else
 		echo "Invalid input, use only numerics."
 		unset cstvhdsize
 		customvhdsize
 	fi
+	customvm_iso
 }
 
-function getisoname() {
+function customvm_iso() {
 	ls -R -1 ${IMAGES_DIR}/iso/
-	read -r -p "Type/copy the name of desired iso including extension (.iso/.img etc.): " isoname
-	if [ -z "${isoname//[a-zA-Z0-9.]}" ] && [ -n "$isoname" ]; then
-		echo ""
+	read -r -p "Type/copy the name of desired iso including extension (.iso, .img etc.): " isoname
+	if [ -z "${isoname//[a-zA-Z0-9_.\-]}" ] && [ -n "$isoname" ]; then
+		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
+		sudo -u $(logname) sed -i '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
 		echo "You have to provide .iso or .img file name (including extension) for VM to work."
 		echo "Copy file to ${IMAGES_DIR}/iso/ directory if not on the list above."
-		getisoname
+		customvm_iso
 	fi
 }
 
@@ -659,11 +624,11 @@ function macosvmname() {
 function macosvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${macosname}.sh ] > /dev/null 2>&1; then
 		echo "VM named \"${macosname}\" already exist."
-		read -r -p "Overwrite '${macosname}' VM [Y/n] " askmcsovrw
+		read -r -p "Overwrite \"${macosname}\" VM (this will delete VHD with the same name as well)? " askmcsovrw
 		case $askmcsovrw in
 		[yY][eE][sS]|[yY])
 			unset askmcsovrw
-			macosvhdname
+			macosvhdsize
 			;;
 		[nN][oO]|[nN])
 			unset askmcsovrw
@@ -676,41 +641,6 @@ function macosvmoverwrite_check() {
 			;;
 		esac
 	else
-		macosvhdname
-	fi
-}
-
-function macosvhdname() {
-	read -r -p " Choose name for your VHD (e.g. macosX): " macvhdname
-	if [ -z "${macvhdname//[a-zA-Z0-9]}" ] && [ -n "$macvhdname" ]; then
-		macosvhdoverwrite_check
-	else
-		echo "Ivalid input. No special characters allowed."
-		unset macvhdname
-		macosvhdname
-	fi
-}
-
-function macosvhdoverwrite_check() {
-	if [ -f ${IMAGES_DIR}/${macvhdname}.qcow2 ] > /dev/null 2>&1; then
-		echo "VHD named \"${macvhdname}\" already exist."
-		read -r -p "Overwrite '${macvhdname}' VHD [Y/n] " askmcsvhdovrw
-		case $askmcsvhdovrw in
-		[yY][eE][sS]|[yY])
-			unset askmcsvhdovrw
-			macosvhdsize
-			;;
-		[nN][oO]|[nN])
-			unset askmcsvhdovrw
-			macosvhdname
-			;;
-		*)
-			echo "Invalid input..."
-			unset askmcsvhdovrw
-			macosvhdoverwrite_check
-			;;
-		esac
-	else
 		macosvhdsize
 	fi
 }
@@ -718,9 +648,9 @@ function macosvhdoverwrite_check() {
 function macosvhdsize() {
 	read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
 	if [ -z "${macvhdsize//[0-9]}" ] && [ -n "$macvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macvhdname}.qcow2 ${macvhdsize}G
-		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macvhdname}'.qcow2'
-		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macvhdname}'.img'
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G
+		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macosname}'.qcow2'
+		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macosname}'.img'
 		sudo -u $(logname) sed -i '/^## '${macosname}'/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i '/^'${macosname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i '/^'${macosname}'_ISO=/c\' ${CONFIG_LOC}
@@ -946,15 +876,14 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 function remove_vm() {
 	echo " Remove Virtual Machine."
 	read -r -p "VM name: " rmvmname
-	read -r -p "VHD name: " rmvhdname
 	echo "Will be removed (shortcuts and startup scripts will be removed as well):"
 	echo " VM: ${rmvmname}.sh"
-	echo " VHD: ${rmvhdname}.qcow2"
-		read -r -p " Remove ${rmvmname} VM? [Y/n] (default: Yes) " -e -i y rmvminput
+	echo " VHD: ${rmvmname}.qcow2"
+		read -r -p " Remove \"${rmvmname}\" VM? [Y/n] (default: Yes) " -e -i y rmvminput
 	case $rmvminput in
 	[yY][eE][sS]|[yY])
 		rm ${SCRIPTS_DIR}/${rmvmname}.sh
-		rm ${IMAGES_DIR}/${rmvhdname}.qcow2
+		rm ${IMAGES_DIR}/${rmvmname}.qcow2
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
 		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
 		echo "VM \"${rmvmname}\" removed."
