@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 2020-05-25
 ### Added
-- GPU option for custom/macOS VM passthrough (nvidia VBIOS append to script).
+- GPU option for custom/macOS VM passthrough (GPU VBIOS append to script).
 - VBIOS extraction scripts.
 ### Changed
 - VM iso name handling.
