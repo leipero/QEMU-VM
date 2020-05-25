@@ -20,17 +20,21 @@ sudo bash autoconfiguration.sh
 [Check the wiki for more information and guides on how to make everything work](https://gitlab.com/YuriAlek/vfio/wikis/Home).
 
 ## Known problems
+- Users must extract, edit (in case of nvidia) and load VBIOS to the VM manually.
 - Script relies on logged user and sudo or su commands in some parts.
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
-- Add ovmf search and injection.
 - Simplify script and make less assumptions.
 - Add wayland support.
 - More sane GPU detection (for multi GPU support).
-- Automatic vBIOS extraction etc..
 
-## Passthrough and VMs scripts author
+## Sources links
+- Yuri scripts
 https://gitlab.com/YuriAlek/vfio
-## MacOS scripts author
+- Nvidia VBIOS extraction (tools in main script above)
+https://gitlab.com/YuriAlek/vfio/-/wikis/vbios
+- MacOS scripts
 https://github.com/foxlet/macOS-Simple-KVM.git
+- MacOS nvidia
+https://github.com/kholia/OSX-KVM/blob/master/notes.md

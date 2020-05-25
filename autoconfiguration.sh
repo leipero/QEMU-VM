@@ -34,6 +34,7 @@ function checkos_install() {
 	if command -v apt > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_apt
+		populate_ovmf
 		addgroups
 		enable_earlykms_apt
 		setup_bootloader
@@ -43,6 +44,7 @@ function checkos_install() {
 	elif command -v yum > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_yum
+		populate_ovmf
 		addgroups
 		setup_bootloader
 		vm_choice
@@ -51,6 +53,7 @@ function checkos_install() {
 	elif command -v zypper > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_zypper
+		populate_ovmf
 		addgroups
 		setup_bootloader
 		vm_choice
@@ -60,6 +63,7 @@ function checkos_install() {
 	elif command -v pacman > /dev/null 2>&1; then
 		populate_base_config
 		install_dep_pacman
+		populate_ovmf
 		addgroups
 		enable_earlykms_pacman
 		setup_bootloader
@@ -132,6 +136,8 @@ function continue_script() {
 ## Install dependencies.
 
 function install_dep_apt() {
+	OVMF_C="/usr/share/OVMF/OVMF_CODE.fd"
+	OVMF_V="/usr/share/OVMF/OVMF_VARS.fd"
 	if dpkg -s curl git xterm > /dev/null 2>&1; then
 		echo "XTERM is already installed."
 	else
@@ -160,6 +166,8 @@ function install_dep_apt() {
 }
 
 function install_dep_yum() {
+	OVMF_C="/usr/share/edk2/ovmf/OVMF_CODE.fd"
+	OVMF_V="/usr/share/edk2/ovmf/OVMF_VARS.fd"
 	echo "Installing packages, please wait."
 	yum -yq groups install "virtualization"
 	uym -yq install curl xterm git
@@ -167,12 +175,16 @@ function install_dep_yum() {
 }
 
 function install_dep_zypper() {
+	OVMF_C="/usr/share/qemu/ovmf-x86_64-ms-code.bin"
+	OVMF_V="/usr/share/qemu/ovmf-x86_64-ms-vars.bin"
 	echo "Installing packages, please wait."
 	zypper -n install patterns-openSUSE-kvm_server patterns-server-kvm_tools ovmf xterm curl
 	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function install_dep_pacman() {
+	OVMF_C="/usr/share/OVMF/x64/OVMF_CODE.fd"
+	OVMF_V="/usr/share/OVMF/x64/OVMF_VARS.fd"
 	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
@@ -336,6 +348,11 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^EVENTMOUSE=/c\EVENTMOUSE='${EMOUSE}'' ${CONFIG_LOC}
 }
 
+function populate_ovmf() {
+	sudo -u $(logname) sed -i -e '/^OVMF_CODE=/c\OVMF_CODE='${OVMF_C}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^OVMF_VARS=/c\OVMF_VARS='${OVMF_V}'' ${CONFIG_LOC}
+}
+
 function populate_iommu() {
 	echo "Populating config file for IOMMU, please wait..."
 	## Get IOMMU groups
@@ -420,6 +437,7 @@ function vm_choice() {
 		create_macos
 		download_macos
 		create_macospt
+		askgpu_macospt_pt
 		startupsc_macos
 		unset IMGVMSET macosname macvhdname macvhdsize
 		echo "Virtual Machine Created."
@@ -448,7 +466,7 @@ function vm_choice() {
 
 function create_customvm() {
 	echo "Custom VM creation:"
-	echo "Before you continue please copy your .iso image into ${IMAGES_DIR}/iso/ directory."
+	echo "Before you continue please copy your .iso/.img image into ${IMAGES_DIR}/iso/ directory."
 	customvmname
 }
 
@@ -525,8 +543,7 @@ function customvhdsize() {
 	read -r -p " Choose your VHD size (in GB, numeric only): " cstvhdsize
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvhdname}.qcow2 ${cstvhdsize}G
-		ls -R -1 ${IMAGES_DIR}/iso/
-		read -r -p "Type/copy the name of desired iso including extension (.iso): " isoname
+		getisoname
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvhdname}'.qcow2'
 		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
 		sudo -u $(logname) sed -i '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
@@ -542,6 +559,18 @@ function customvhdsize() {
 	fi
 }
 
+function getisoname() {
+	ls -R -1 ${IMAGES_DIR}/iso/
+	read -r -p "Type/copy the name of desired iso including extension (.iso/.img etc.): " isoname
+	if [ -z "${isoname//[a-zA-Z0-9.]}" ] && [ -n "$isoname" ]; then
+		echo ""
+	else
+		echo "You have to provide .iso or .img file name (including extension) for VM to work."
+		echo "Copy file to ${IMAGES_DIR}/iso/ directory if not on the list above."
+		getisoname
+	fi
+}
+
 function create_pt() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
@@ -551,10 +580,12 @@ function create_pt() {
 
 function askgpu_custom_pt() {
 	echo "GPU Passthrough choice."
-	echo "	1) Default (should work with most GPUs)"
+	echo "	1) Default (no VBIOS, works for some GPUs)"
 	echo "	2) AMD (workaround for Windows driver bug)"
-	until [[ $askgpupt =~ ^[1-2]$ ]]; do
-		read -r -p "Choose device to pass [1-2]: " -e -i 1 askgpupt
+	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
+	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
+	until [[ $askgpupt =~ ^[1-4]$ ]]; do
+		read -r -p "Choose device to pass [1-4]: " -e -i 1 askgpupt
 	done
 	case $askgpupt in
 	1)
@@ -563,6 +594,16 @@ function askgpu_custom_pt() {
 	2)
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
+		;;
+	3)
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
+		;;
+	4)
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		unset askgpupt
 		;;
@@ -698,6 +739,38 @@ function create_macospt() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
+}
+
+function askgpu_macospt_pt() {
+	echo "GPU Passthrough choice."
+	echo "	1) Default (no VBIOS, works for some GPUs)"
+	echo "	2) AMD (workaround for Windows driver bug)"
+	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
+	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
+	until [[ $askgpupt =~ ^[1-4]$ ]]; do
+		read -r -p "Choose device to pass [1-4]: " -e -i 1 askgpupt
+	done
+	case $askgpupt in
+	1)
+		unset askgpupt
+		;;
+	2)
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
+		;;
+	3)
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
+		;;
+	4)
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
+		;;
+	esac
 }
 
 function create_macosqxl() {
@@ -932,20 +1005,21 @@ ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/s
 
 function reminder() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
 function remindergl() {
 	echo "Everything is Done."
-	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }
 
 function remindernopkgm() {
 	echo "Everything is Done."
+	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
 	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
 	echo -e "\033[1;31mWARNING: You must add your user to kvm and libvirt groups on your distribution.\033[0m"
-	echo -e "\033[1;31mWARNING: You must enable eraly KMS and iommu for your GPU/system in distribution boot manager.\033[0m"
+	echo -e "\033[1;31mWARNING: You must enable IOMMU for your CPU in distribution boot manager.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in Hardware configurations directory.\033[0m"
 }

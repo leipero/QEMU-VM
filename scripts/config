@@ -50,11 +50,11 @@ LOG=
 IMAGES=
 
 ## VBIOS
-VBIOS=$IMAGES/VBIOS.rom
+VBIOS=/root/VBIOS.rom
 
 ## Windows
 VIRTIO=$IMAGES/iso/virtio-win.iso
-OVMF=/usr/share/OVMF/x64/OVMF_CODE.fd
+OVMF_CODE=/usr/share/OVMF/x64/OVMF_CODE.fd
 OVMF_VARS=/usr/share/OVMF/x64/OVMF_VARS.fd
 
 ## MacOS

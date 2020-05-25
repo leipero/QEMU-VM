@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-25
+### Added
+- GPU option for custom/macOS VM passthrough (nvidia VBIOS append to script).
+- VBIOS extraction scripts.
+### Changed
+- VM iso name handling.
+- Custom VM scripts for new OVMF name.
+- README file.
+### Fixed
+- OVMF per distribution entries.
+
 ## 2020-05-24
 ### Added
 - GPU option for custom VM passthrough (fix for AMD Windows drivers bug).
