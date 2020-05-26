@@ -107,7 +107,7 @@ function continue_script() {
 	echo -e "\033[1;31mYou must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue.\033[0m"
 	read -r -p " Do you want to continue with script? [Y/n] " askconts
 	case $askconts in
-	    	[yY][eE][sS]|[yY])
+	[yY][eE][sS]|[yY])
 	    	populate_base_config
 		check_iommu
 		vm_choice
@@ -285,7 +285,6 @@ function enable_iommu_grub() {
 		sed -i -e "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${IOMMU_CPU}_iommu=on iommu=pt /g" /etc/default/grub
 		echo "IOMMU line added to the GRUB configuration file(s)."
 		echo "Generating GRUB configuration file, please wait..."
-		update-grub > /dev/null 2>&1
 		grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 		echo "GRUB configuration file generated."
 	fi
@@ -325,13 +324,13 @@ function check_dm() {
 
 function populate_base_config() {
 	## Populate config paths
-	sudo -u $(logname) sed -i '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
 	## Set number of cores in the config file
-	sudo -u $(logname) sed -i '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
 	## Set VM RAM size based on free memory
-	sudo -u $(logname) sed -i '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
 	## Set VM hugepages size based on VM RAM
 	sudo -u $(logname) sed -i -e '/^HUGEPAGES=/c\HUGEPAGES='${HPG}'' ${CONFIG_LOC}
 	check_dm
@@ -366,17 +365,17 @@ function populate_iommu() {
 	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO_GET//:/_}"
 	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
 	## Populate config IOMMU groups
-	sudo -u $(logname) sed -i '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO_GET}'"' ${CONFIG_LOC}
 	## Populate config PCI BUS IDs
-	sudo -u $(logname) sed -i '/^videoid=/c\videoid="'${videoid_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^audioid=/c\audioid="'${audioid_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^pciaudioid=/c\pciaudioid="'${pciaudioid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^videoid=/c\videoid="'${videoid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^audioid=/c\audioid="'${audioid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^pciaudioid=/c\pciaudioid="'${pciaudioid_GET}'"' ${CONFIG_LOC}
 	## Populate config Virsh devices
-	sudo -u $(logname) sed -i '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
 	echo "Config file populated with IOMMU settings."
 }
 
@@ -401,10 +400,10 @@ function vm_choice() {
 		create_customvm
 		create_pt
 		askgpu_custom_pt
-		download_virtio
+		check_virtio_win
+		inject_virtio_windows
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
-		echo "Virtual Machine Created."
 		reminder
 		another_os
 		;;
@@ -412,7 +411,7 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		create_qxl
-		download_virtio
+		check_virtio_win
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
@@ -423,7 +422,7 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		create_virtio
-		download_virtio
+		check_virtio_win
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
@@ -510,8 +509,8 @@ function customvhdsize() {
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
-		sudo -u $(logname) sed -i '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo ${IMGVMSET} >> ${CONFIG_LOC}
 	else
@@ -527,7 +526,7 @@ function customvm_iso() {
 	read -r -p "Type/copy the name of desired iso including extension (.iso, .img etc.): " isoname
 	if [ -z "${isoname//[a-zA-Z0-9_.\-]}" ] && [ -n "$isoname" ]; then
 		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
-		sudo -u $(logname) sed -i '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
 		echo "You have to provide .iso or .img file name (including extension) for VM to work."
@@ -651,9 +650,9 @@ function macosvhdsize() {
 		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macosname}'.qcow2'
 		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macosname}'.img'
-		sudo -u $(logname) sed -i '/^## '${macosname}'/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i '/^'${macosname}'_IMG=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i '/^'${macosname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## '${macosname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${macosname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${macosname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
@@ -751,17 +750,20 @@ function download_macos() {
 	esac
 }
 
+function check_virtio_win() {
+	if [ -f ${IMAGES_DIR}/iso/virtio-win.iso ] > /dev/null 2>&1; then
+		echo "Virto Windows drivers are already downloaded."
+	else
+		download_virtio
+	fi
+}
+
 function download_virtio() {
 	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
 	case $askvirtio in
-	    	[yY][eE][sS]|[yY])
-	    	if [ -f ${IMAGES_DIR}/iso/virtio-win.iso ] > /dev/null 2>&1; then
-			echo "Virto Windows drivers are already downloaded."
-			unset askvirtio
-		else
-			sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
-			sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
-		fi
+	[yY][eE][sS]|[yY])
+		sudo -u $(logname) curl https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
+		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		;;
 	[nN][oO]|[nN])
 		unset askvirtio
@@ -774,10 +776,29 @@ function download_virtio() {
 	esac	
 }
 
+function inject_virtio_windows() {
+	read -r -p " Do you want to add virtio Windows drivers .iso to the VM? [Y/n] (default: Yes) " -e -i y injectvirtio
+	case $injectvirtio in
+	[yY][eE][sS]|[yY])
+		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		echo "Virtio Windows drivers .iso added to the VM."
+		unset injectvirtio
+		;;
+	[nN][oO]|[nN])
+		unset injectvirtio
+		;;
+	*)
+		echo "Invalid input..."
+		unset injectvirtio
+		inject_virtio_windows
+		;;
+	esac
+}
+
 function another_os() {
 	read -r -p " Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
 	case $askanotheros in
-	    	[yY][eE][sS]|[yY])
+	[yY][eE][sS]|[yY])
 		vm_choice
 		;;
 	[nN][oO]|[nN])
@@ -811,7 +832,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 function scnopt_custom() {
 	read -r -p " Do you want to create \"${cstvmname}\" shortcut? [Y/n] (default: Yes) " -e -i y asknoptshort
 	case $asknoptshort in
-	    	[yY][eE][sS]|[yY])
+	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${cstvmname} VM
@@ -849,7 +870,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desk
 function shortcut_macosqxl() {
 	read -r -p " Do you want to create \"${macosname}\" shortcut? [Y/n] (default: Yes) " -e -i y askmcoshort
 	case $askmcoshort in
-	    	[yY][eE][sS]|[yY])
+	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${macosname} VM
@@ -886,6 +907,9 @@ function remove_vm() {
 		rm ${IMAGES_DIR}/${rmvmname}.qcow2
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
 		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
 		echo "VM \"${rmvmname}\" removed."
 		;;
 	[nN][oO]|[nN])

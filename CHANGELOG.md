@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-26
+### Added
+- Virtio drivers injection option for Windows PT VMs.
+- VHD control script.
+### Changed
+- Some cleaning up.
+- Grub update process.
+### Fixed
+- VMs configuration is now removed when VM is removed.
+- Windows virtio drivers check.
+
+
 ## 2020-05-25
 ### Added
 - GPU option for custom/macOS VM passthrough (GPU VBIOS append to script).

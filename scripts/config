@@ -52,12 +52,12 @@ IMAGES=
 ## VBIOS
 VBIOS=/root/VBIOS.rom
 
-## Windows
+## Windows_PTVM
 VIRTIO=$IMAGES/iso/virtio-win.iso
 OVMF_CODE=
 OVMF_VARS=
 
-## MacOS
+## MacOS_PTVM
 MACOS_ESP=$IMAGES/macos/ESP.qcow2
 MACOS_OVMF_CODE=$IMAGES/macos/firmware/OVMF_CODE.fd
 MACOS_OVMF_VARS=$IMAGES/macos/firmware/OVMF_VARS-1024x768.fd
