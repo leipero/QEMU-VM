@@ -50,13 +50,21 @@ with:
 This should make VM work, but expect increased latency and everything, since audio device is emulated by QEMU now.
 
 ## vBIOS
-You may need to pass VIDEO BIOS of the GPU to the VM, in that scenarion, create VM with 'GPU VBIOS append' option. But you are not done here, you need to extract vBIOS from the GPU, or download it from TechPowerUp website. After you got the rom file, simply put it where you want, and point to it in the config file, change:
+You may need to pass VIDEO BIOS of the GPU to the VM, in that scenario, create VM with 'GPU VBIOS append' option. But you are not done here, you need to extract vBIOS from the GPU, or download it from TechPowerUp website. After you got the rom file, simply put it where you want, and point to it in the config file, change:
 ```
 VBIOS=/root/VBIOS.rom
 ```
 to:
 ```
 VBIOS=/yourpath/yourrom.rom
+```
+Additionally, if you did not create your VM with GPU VBIOS append' option. Replace the following line:
+```
+-device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on \
+```
+with:
+```
+-device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS \
 ```
 How to get proper vBIOS for your GPU:
 https://gitlab.com/YuriAlek/vfio/-/wikis/vbios
