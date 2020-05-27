@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - USB devices (keyboard, mouse and joystick) are now in config file and ready for PT (manual).
 - Documentation.
 ### Changed
+- Create faster qcow2 images (add preallocation=metadata).
 - VHD control cache handling.
 ### Fixed
 - VHD control rush condition.

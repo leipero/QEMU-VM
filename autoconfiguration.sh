@@ -516,7 +516,7 @@ function customvmoverwrite_check() {
 function customvhdsize() {
 	read -r -p " Choose your ${cstvmname} VHD size (in GB, numeric only): " cstvhdsize
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
+		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
 		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
@@ -656,7 +656,7 @@ function macosvmoverwrite_check() {
 function macosvhdsize() {
 	read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
 	if [ -z "${macvhdsize//[0-9]}" ] && [ -n "$macvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G
+		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macosname}'.qcow2'
 		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macosname}'.img'
 		sudo -u $(logname) sed -i -e '/^## '${macosname}'/c\' ${CONFIG_LOC}
