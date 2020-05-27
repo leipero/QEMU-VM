@@ -58,7 +58,7 @@ to:
 ```
 VBIOS=/yourpath/yourrom.rom
 ```
-Additionally, if you did not create your VM with GPU VBIOS append' option. Replace the following line in VM script:
+Additionally, if you did not create your VM with 'GPU VBIOS append' option. Replace the following line in VM script:
 ```
 -device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on \
 ```
