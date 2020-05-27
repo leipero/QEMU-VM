@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-27
+### Added
+- USB devices (keyboard, mouse and joystick) are now in config file and ready for PT (manual).
+- Documentation.
+### Changed
+- VHD control cache handling.
+### Fixed
+- VHD control rush condition.
+- VHD control, get semi-acceptable speeds in single HDD drive-to-drive conditions.
+### Removed
+- Hardware configurations.
+
 ## 2020-05-26
 ### Added
 - Virtio drivers injection option for Windows PT VMs.

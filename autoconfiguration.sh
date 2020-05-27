@@ -339,6 +339,15 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^EVENTIF01=/c\EVENTIF01='${EIF01}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^EVENTKBD=/c\EVENTKBD='${EKBD}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^EVENTMOUSE=/c\EVENTMOUSE='${EMOUSE}'' ${CONFIG_LOC}
+	## USB devices settings (keyboard, mouse, joystick = exact order, add, change etc.)
+	sudo -u $(logname) sed -i -e '/^usb1_vendorid=0x/c\usb1_vendorid=0x'${USB1VID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb1_productid=0x/c\usb1_productid=0x'${USB1PID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb2_vendorid=0x/c\usb2_vendorid=0x'${USB2VID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb2_productid=0x/c\usb2_productid=0x'${USB2PID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb3_vendorid=0x/c\usb3_vendorid=0x'${USB3VID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb3_productid=0x/c\usb3_productid=0x'${USB3PID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb4_vendorid=0x/c\usb4_vendorid=0x'${USB4VID}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^usb4_productid=0x/c\usb4_productid=0x'${USB4PID}'' ${CONFIG_LOC}
 }
 
 function populate_ovmf() {
@@ -940,9 +949,18 @@ HPG="$(( (RAMFF * 1050) / 2))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 ## Get input devices information
-EIF01=$(ls /dev/input/by-id/ | grep -i "event-if01")
-EKBD=$(ls /dev/input/by-id/ | grep -i "event-kbd")
-EMOUSE=$(ls /dev/input/by-id/ | grep -i "event-mouse")
+EIF01="$(ls /dev/input/by-id/ | grep -i "event-if01")"
+EKBD="$(ls /dev/input/by-id/ | grep -i "event-kbd")"
+EMOUSE="$(ls /dev/input/by-id/ | grep -i "event-mouse")"
+## Get USB information.
+USB1VID="$(lsusb | grep -i "keyboard" | head -c 33 | cut -d ':' -f2 | tail -c5)"
+USB1PID="$(lsusb | grep -i "keyboard" | head -c 33 | tail -c5 | sed -e 's/ //g')"
+USB2VID="$(lsusb | grep -i "mouse" | head -c 33 | cut -d ':' -f2 | tail -c5)"
+USB2PID="$(lsusb | grep -i "mouse" | head -c 33 | tail -c5 | sed -e 's/ //g')"
+USB3VID="$(lsusb | grep -i "joystick" | head -c 33 | cut -d ':' -f2 | tail -c5)"
+USB3PID="$(lsusb | grep -i "joystick" | head -c 33 | tail -c5 | sed -e 's/ //g')"
+USB4VID=""
+USB4PID=""
 
 function autologintty3() {
 	if [ -f /etc/systemd/system/getty@tty3.service.d/override.conf ] > /dev/null 2>&1; then

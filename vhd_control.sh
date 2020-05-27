@@ -36,14 +36,15 @@ function vhdmount() {
 		echo "Can't mount VHD if another is already mounted."; else
 	mkdir -p ${VHD_MOUNT_POINT}
 	sudo modprobe nbd max_part=8
+	wait
 	ls -1 $IMGDIR
 	read -r -p "Type/copy the name of the VHD to mount (inc. extension):" vhdmnt
-	sudo qemu-nbd --connect=/dev/nbd0 ${IMGDIR}/${vhdmnt}
+	sudo qemu-nbd --nocache --aio=threads --connect=/dev/nbd0 ${IMGDIR}/${vhdmnt}
+	wait
 	sudo fdisk /dev/nbd0 -l
 	read -r -p "Choose partition to mount (numeric only, following nbd0p):" vhdmntprt
 	if [[ "$vhdmntprt" =~ ^[0-9]*$ ]]; then
 		sudo mount /dev/nbd0p${vhdmntprt} ${VHD_MOUNT_POINT}
-		wait
 	else
 		echo "invalid input"
 		vhdmount
@@ -54,7 +55,9 @@ function vhdmount() {
 function vhdunmount() {
 	if [ -d ${VHD_MOUNT_POINT} ]; then
 	sudo umount $VHD_MOUNT_POINT
+	wait
 	sudo qemu-nbd --disconnect /dev/nbd0
+	wait
 	sudo rmmod nbd
 	wait
 	rm -d $VHD_MOUNT_POINT
