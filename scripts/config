@@ -28,7 +28,7 @@ pciaudiobusid="0000:$IOMMU_PCI_AUDIO"
 RAM=
 CORES=
 
-## Hugepages
+## Hugepages ((RAM * 1050) / 2)
 HUGEPAGES=
 
 ## Display manager

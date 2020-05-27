@@ -12,7 +12,7 @@ source "${BASH_SOURCE%/*}/config"
 ## Memory lock limit
 [[ $ULIMIT != $ULIMIT_TARGET ]] && ulimit -l $ULIMIT_TARGET
 
-## Load hugepages (VM RAM in MB divided by 2+100)
+## Load hugepages ((RAM * 1050) / 2)
 sysctl -qw vm.drop_caches=1
 sysctl -qw vm.compact_memory=1
 echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages
