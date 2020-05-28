@@ -11,6 +11,7 @@ qemu-system-x86_64 -enable-kvm -M q35 -vga virtio -display sdl,gl=on \
   -usb -device usb-kbd -device usb-tablet \
   -soundhw all \
   -drive if=pflash,format=raw,readonly,file=$OVMF_CODE \
+  -drive if=pflash,format=raw,file=$OVMF_VARS \
   -drive if=virtio,file=$DUMMY_IMG,format=qcow2,cache=none,aio=threads \
   -drive file=$DUMMY_ISO,index=1,media=cdrom >> $LOG 2>&1 &
 
