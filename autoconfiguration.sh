@@ -594,7 +594,7 @@ function create_virtio() {
 	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
 	case $askvirgl in
 	[yY][eE][sS]|[yY])
-		sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga virtio -display gtk,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	[nN][oO]|[nN])
 		unset askvirgl
@@ -611,7 +611,7 @@ function create_qxl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display gtk,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 }
 

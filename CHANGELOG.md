@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - RAM allocation failed.
 - Curl download.
+- Paths for config file in blueprints (thanks ez).
+- Fix QXL VMs creation (thanks to the ez again).
 
 ## 2020-05-27
 ### Added
