@@ -4,7 +4,8 @@
 [[ "$EUID" -ne 0 ]] && echo "Please run as root" && exit 1
 
 ## Load the config file
-source "${BASH_SOURCE%/*}/config"
+SCRIPTSDIRS="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
+source "${SCRIPTSDIRS}/config"
 
 ## Check libvirtd
 [[ $(systemctl status libvirtd | grep running) ]] || systemctl start libvirtd && sleep 1 && LIBVIRTD=STOPPED
