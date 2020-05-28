@@ -646,7 +646,7 @@ function custom_optset() {
 function custom_cores() {
 	read -r -p " Set VM number of cores (numeric only): " cstmcoresnpt
 	if [ -z "${cstmcoresnpt//[0-9]}" ] && [ -n "$cstmcoresnpt" ]; then
-		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
 		echo "Ivalid input. Numerics only."
@@ -780,7 +780,7 @@ function macos_optset() {
 function macos_cores() {
 	read -r -p " Set VM number of cores (numeric only): " mcoscoresnpt
 	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
-		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
 		echo "Ivalid input. Numerics only."
