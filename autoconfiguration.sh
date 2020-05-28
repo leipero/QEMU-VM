@@ -178,9 +178,9 @@ function install_dep_zypper() {
 }
 
 function install_dep_pacman() {
-	OVMF_C="/usr/share/OVMF/x64/OVMF_CODE.fd"
-	OVMF_V="/usr/share/OVMF/x64/OVMF_VARS.fd"
-	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null 2>&1; then
+	OVMF_C="/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
+	OVMF_V="/usr/share/edk2-ovmf/x64/OVMF_VARS.fd"
+	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer edk2-ovmf curl xterm git > /dev/null 2>&1; then
 		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
