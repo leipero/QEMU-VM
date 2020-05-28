@@ -353,10 +353,7 @@ function populate_base_config() {
 
 function populate_ovmf() {
 	sudo -u $(logname) sed -i -e '/^OVMF_CODE=/c\OVMF_CODE='${OVMF_C}'' ${CONFIG_LOC}
-	sudo -u $(logname) mkdir -p ${IMAGES_DIR}/firmware
-	sudo -u $(logname) cp ${OVMF_V} ${IMAGES_DIR}/firmware/
-	OVMF_V1="${IMAGES_DIR}/firmware/OVMF_VARS.fd"
-	sudo -u $(logname) sed -i -e '/^OVMF_VARS=/c\OVMF_VARS='${OVMF_V1}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^OVMF_VARS=/c\OVMF_VARS='${OVMF_V}'' ${CONFIG_LOC}
 }
 
 function populate_iommu() {
