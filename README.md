@@ -25,6 +25,7 @@ sudo bash autoconfiguration.sh
 - Wayland session was not tested at all and will likely not work.
 
 ## TODO
+- BIOS based VMs for passthrough.
 - Better way to unbind/bind VC, devices and handle DM.
 - Add wayland support.
 - More sane GPU detection (for multi GPU support).
