@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - RAM allocation is now based on MemAvailable, rather than MemFree.
 - Set -2GB for global RAM detection, just in case.
 - OVMF for Arch Linux (to be in line with new package name and location).
+- Make use of OVMF_VARS for custom VMs (already used on macOS).
 - Updated documentation.
 ### Fixed
 - RAM allocation failed.
