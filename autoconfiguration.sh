@@ -646,8 +646,9 @@ function custom_optset() {
 function custom_cores() {
 	read -r -p " Set VM number of cores (numeric only): " cstmcoresnpt
 	if [ -z "${cstmcoresnpt//[0-9]}" ] && [ -n "$cstmcoresnpt" ]; then
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
 		echo "Ivalid input. Numerics only."
 		unset cstmcoresnpt
@@ -658,6 +659,7 @@ function custom_cores() {
 function custom_ram() {
 	read -r -p " Set VM RAM amount (in GB, numeric only): " cstmramnpt
 	if [ -z "${cstmramnpt//[0-9]}" ] && [ -n "$cstmramnpt" ]; then
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
@@ -780,8 +782,9 @@ function macos_optset() {
 function macos_cores() {
 	read -r -p " Set VM number of cores (numeric only): " mcoscoresnpt
 	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
+		sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/-smp $CORES,sockets=1,cores=$(( $CORES / 2 ))/-smp $'${macosname}'_CORES,sockets=1,cores=$(( $'${macosname}'_CORES / 2 ))/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
 		echo "Ivalid input. Numerics only."
 		unset mcoscoresnpt
@@ -792,6 +795,7 @@ function macos_cores() {
 function macos_ram() {
 	read -r -p " Set VM RAM amount (in GB, numeric only): " mcosramnpt
 	if [ -z "${mcosramnpt//[0-9]}" ] && [ -n "$mcosramnpt" ]; then
+		sudo -u $(logname) sed -i -e '/^'${macosname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
