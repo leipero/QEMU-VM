@@ -778,7 +778,7 @@ function macos_optset() {
 }
 
 function macos_cores() {
-	read -r -p " Set VM number of cores (in GB, numeric only, default: Global): " -i -e ${CORES_NUM_GET} mcoscoresnpt
+	read -r -p " Set VM number of cores (numeric only): " mcoscoresnpt
 	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
 		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
@@ -790,7 +790,7 @@ function macos_cores() {
 }
 
 function macos_ram() {
-	read -r -p " Set VM RAM amount (in GB, numeric only, default: Global): " -i -e "${RAMFF}" mcosramnpt
+	read -r -p " Set VM RAM amount (in GB, numeric only): " mcosramnpt
 	if [ -z "${mcosramnpt//[0-9]}" ] && [ -n "$mcosramnpt" ]; then
 		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
