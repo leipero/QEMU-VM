@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 - Redundant code.
 
+
 ## 2020-05-27
 ### Added
 - USB devices (keyboard, mouse and joystick) are now in config file and ready for PT (manual).
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - VHD control, get semi-acceptable speeds in single HDD drive-to-drive conditions.
 ### Removed
 - Hardware configurations.
+
 
 ## 2020-05-26
 ### Added
@@ -60,6 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 - VHD name choice (to speed up creation process).
 
+
 ## 2020-05-24
 ### Added
 - GPU option for custom VM passthrough (fix for AMD Windows drivers bug).
@@ -80,6 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - MacOS Firmware.
 - Redundant code.
 
+
 ## 2020-05-23
 ### Added
 - MacOS blueprint (passthrough and qxl).
@@ -96,6 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - VirGL/Virtio-vga shortcuts.
 ### Removed
 - MacOS virsh script.
+
 
 ## 2020-05-22
 ### Added
@@ -118,6 +123,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Gnome terminal.
 - Windows virsh script.
 
+
 ## 2020-05-21
 ### Added
 - Custom VM creation (custom vhd, iso selection etc.).
@@ -136,6 +142,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - VHD mount scripts.
 - Code supporting removed presets.
 
+
 ## 2020-05-20
 ### Added
 - This CHANGELOG file to hopefully serve as an evolving example of a standardized open source project CHANGELOG.
@@ -151,6 +158,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Root user no longer deals with user files.
 ### Removed
 - Old image creation script (images/create_image.sh).
+
 
 ## 2020/05/19
 - First creation.
