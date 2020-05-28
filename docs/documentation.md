@@ -68,3 +68,10 @@ with:
 ```
 How to get proper vBIOS for your GPU:
 https://gitlab.com/YuriAlek/vfio/-/wikis/vbios
+
+## VirGL issues, flickering, graphical corruption etc.
+In case you face flicker or graphical corruption using VirGL, you can try to downgrade virglrenderer package to 0.7.0 version. Afterwards, depending on the distribution you use, you may need to symlink it for QEMU to recognize since .so library name has been changed, on Arch Linux, this command should do the job:
+```
+ln -sf /usr/lib/libvirglrenderer.so.0 /usr/lib/libvirglrenderer.so.1
+```
+It may differ for your distribution, so you may need to look it up manually.

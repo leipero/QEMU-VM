@@ -4,10 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 2020-05-28
+### Added
+- Non-passthrough custom and macOS VMs RAM size and cores number option (useful for running multi VMs).
 ### Changed
+- Custom non-passthrough VMs graphic cards options reorganization.
+- Custom non-passthrough VMs now use SDL rather than GTK (for compatibility reasons).
 - GPU option no longer defualts to anything, it requires user choice.
 - RAM allocation is now based on MemAvailable, rather than MemFree.
-- Custom non-passthrough VMs now use SDL rather than GTK (for compatibility reasons).
+- Updated documentation.
 ### Fixed
 - RAM allocation failed.
 - Curl download.

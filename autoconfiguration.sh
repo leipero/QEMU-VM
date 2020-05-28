@@ -395,14 +395,13 @@ function populate_iommu() {
 function vm_choice() {
 	echo " Choose VM Type:"
 	echo "	1) Custom OS (VGA passthrough)"
-	echo "	2) Custom OS (QXL - no passthrough)"
-	echo "	3) Custom OS (Virtio - no passthrough)"
-	echo "	4) macOS (VGA passthrough)"
-	echo "	5) macOS (QXL - no passthrough)"
-	echo "	6) Remove existing VM"
-	echo "	7) Exit VM Choice"
-	until [[ $VM_CHOICE =~ ^[1-7]$ ]]; do
-		read -r -p " VM type choice [1-7]: " VM_CHOICE
+	echo "	2) Custom OS (QXL/Virtio/STD - no passthrough)"
+	echo "	3) macOS (VGA passthrough)"
+	echo "	4) macOS (QXL - no passthrough)"
+	echo "	5) Remove existing VM"
+	echo "	6) Exit VM Choice"
+	until [[ $VM_CHOICE =~ ^[1-6]$ ]]; do
+		read -r -p " VM type choice [1-6]: " VM_CHOICE
 	done
 	case $VM_CHOICE in
 	1)
@@ -420,7 +419,8 @@ function vm_choice() {
 	2)
 		unset VM_CHOICE
 		create_customvm
-		create_qxl
+		custom_vgpu
+		custom_optset
 		check_virtio_win
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
@@ -430,44 +430,34 @@ function vm_choice() {
 		;;
 	3)
 		unset VM_CHOICE
-		create_customvm
-		create_virtio
-		check_virtio_win
-		scnopt_custom
-		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
-		echo "Virtual Machine Created."
-		remindernpt
-		another_os
-		;;
-	4)
-		unset VM_CHOICE
 		create_macos
-		download_macos
 		create_macospt
 		askgpu_macospt_pt
+		download_macos
 		startupsc_macos
 		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
 		reminder
 		another_os
 		;;
-	5)
+	4)
 		unset VM_CHOICE
 		create_macos
-		download_macos
 		create_macosqxl
+		macos_optset
+		download_macos
 		shortcut_macosqxl
 		unset IMGVMSET macosname macvhdsize
 		echo "Virtual Machine Created."
 		remindernpt
 		another_os
 		;;
-	6)
+	5)
 		unset VM_CHOICE
 		remove_vm
 		another_os
 		;;
-	7)
+	6)
 		unset VM_CHOICE
 		;;
 	esac
@@ -492,7 +482,7 @@ function customvmname() {
 
 function customvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
-		echo "VM named '${cstvmname}' already exist."
+		echo "VM named \"${cstvmname}\" already exist."
 		read -r -p "Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)? [Y/n] " askcstovrw
 		case $askcstovrw in
 		[yY][eE][sS]|[yY])
@@ -515,7 +505,7 @@ function customvmoverwrite_check() {
 }
 
 function customvhdsize() {
-	read -r -p " Choose your ${cstvmname} VHD size (in GB, numeric only): " cstvhdsize
+	read -r -p " Choose your \"${cstvmname}\" VHD size (in GB, numeric only): " cstvhdsize
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
@@ -584,25 +574,31 @@ function askgpu_custom_pt() {
 	esac
 }
 
-function create_virtio() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
-	echo "By default, VirGL is enabled, it needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy."
-	echo "VirGL requires kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
-	read -r -p "Disable VirGL? (default: enabled) [Y/n] " askvirgl
-	case $askvirgl in
-	[yY][eE][sS]|[yY])
-		sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+function custom_vgpu() {
+	echo " Choose Virtual Graphic Card:"
+	echo "	1) QXL (compatible and fast 2D accelerator, no guest additions required)"
+	echo "	2) Virtio (2D, no OpenGL accleration)"
+	echo "	3) Virtio-GPU (3D paravirtualization, very fast, requires Linux guest with kernel >= 4.4 and mesa >=11.2)"
+	echo "	4) STD (default QEMU graphics, slow but compatible, very unfotunate name lol)"
+	until [[ $vgpuchoice =~ ^[1-4]$ ]]; do
+		read -r -p " Graphic card choice [1-4]: " vgpuchoice
+	done
+	case $vgpuchoice in
+	1)
+		unset vgpuchoice
+		create_qxl
 		;;
-	[nN][oO]|[nN])
-		unset askvirgl
-		;;
-	*)
-		echo "Invalid input..."
-		unset askvirgl
+	2)
+		unset vgpuchoice
 		create_virtio
+		;;
+	3)
+		unset vgpuchoice
+		create_virgl
+		;;
+	4)
+		unset vgpuchoice
+		create_std
 		;;
 	esac
 }
@@ -613,6 +609,62 @@ function create_qxl() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+}
+
+
+function create_virtio() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+}
+
+function create_virgl() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	echo "VirGL needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy (read \"docs\")."
+	echo "VirGL requires Linux guest with kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
+}
+
+function create_std() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+}
+
+function custom_optset() {
+	echo "Set number of CPU cores and RAM amount:"
+	custom_cores
+	custom_ram
+}
+
+function custom_cores() {
+	read -r -p " Set VM number of cores (numeric only): " cstmcoresnpt
+	if [ -z "${cstmcoresnpt//[0-9]}" ] && [ -n "$cstmcoresnpt" ]; then
+		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+	else
+		echo "Ivalid input. Numerics only."
+		unset cstmcoresnpt
+		custom_cores
+	fi
+}
+
+function custom_ram() {
+	read -r -p " Set VM RAM amount (in GB, numeric only): " cstmramnpt
+	if [ -z "${cstmramnpt//[0-9]}" ] && [ -n "$cstmramnpt" ]; then
+		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmramnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+	else
+		echo "Ivalid input. Numerics only."
+		unset cstmramnpt
+		custom_ram
+	fi
 }
 
 function create_macos() {
@@ -717,6 +769,36 @@ function create_macosqxl() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
+}
+
+function macos_optset() {
+	echo "Set macOS number of CPU cores and RAM amount:"
+	macos_cores
+	macos_ram
+}
+
+function macos_cores() {
+	read -r -p " Set VM number of cores (in GB, numeric only, default: Global): " -i -e ${CORES_NUM_GET} mcoscoresnpt
+	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
+		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-smp $CORES/-smp $'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+	else
+		echo "Ivalid input. Numerics only."
+		unset mcoscoresnpt
+		macos_cores
+	fi
+}
+
+function macos_ram() {
+	read -r -p " Set VM RAM amount (in GB, numeric only, default: Global): " -i -e "${RAMFF}" mcosramnpt
+	if [ -z "${mcosramnpt//[0-9]}" ] && [ -n "$mcosramnpt" ]; then
+		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
+	else
+		echo "Ivalid input. Numerics only."
+		unset mcosramnpt
+		macos_ram
+	fi
 }
 
 function download_macos() {
@@ -906,7 +988,9 @@ Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desk
 
 function remove_vm() {
 	echo " Remove Virtual Machine."
-	read -r -p "VM name: " rmvmname
+	echo " Available Virtual Machines:"
+	ls -1 -I "bps" -I "extract-vbios-linux.sh" -I "extract-vbios-nvflash.sh" -I "iommu.sh" -I "iommu.sh" -I "config" ${SCRIPTS_DIR} | sed -e 's/\.sh$//' | sed -e 's/^/  /'
+	read -r -p " Enter VM name: " rmvmname
 	echo "Will be removed (shortcuts and startup scripts will be removed as well):"
 	echo " VM: ${rmvmname}.sh"
 	echo " VHD: ${rmvmname}.qcow2"
@@ -920,6 +1004,8 @@ function remove_vm() {
 		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
 		echo "VM \"${rmvmname}\" removed."
 		;;
 	[nN][oO]|[nN])
