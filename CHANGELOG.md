@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 2020-05-28
+### Changed
+- RAM allocation is now based on MemAvailable, rather than MemFree.
+### Fixed
+- RAM allocation failed.
+- Curl download.
+
 ## 2020-05-27
 ### Added
 - USB devices (keyboard, mouse and joystick) are now in config file and ready for PT (manual).
