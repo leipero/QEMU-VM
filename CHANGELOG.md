@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 2020-05-28
 ### Changed
+- GPU option no longer defualts to anything, it requires user choice.
 - RAM allocation is now based on MemAvailable, rather than MemFree.
 ### Fixed
 - RAM allocation failed.

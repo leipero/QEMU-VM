@@ -554,12 +554,12 @@ function create_pt() {
 
 function askgpu_custom_pt() {
 	echo "GPU Passthrough choice."
-	echo "	1) Default (no VBIOS, works for some GPUs)"
+	echo "	1) Standard (no VBIOS, no workarounds)"
 	echo "	2) AMD (workaround for Windows driver bug)"
 	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
 	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
 	until [[ $askgpupt =~ ^[1-4]$ ]]; do
-		read -r -p "Choose device to pass [1-4]: " -e -i 1 askgpupt
+		read -r -p "Choose device to pass [1-4]: " askgpupt
 	done
 	case $askgpupt in
 	1)
@@ -772,7 +772,7 @@ function download_virtio() {
 	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
 	case $askvirtio in
 	[yY][eE][sS]|[yY])
-		sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 10 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
+		sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		;;
 	[nN][oO]|[nN])
