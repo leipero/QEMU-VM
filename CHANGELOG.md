@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Curl download.
 - Paths for config file in blueprints (thanks ez).
 - Fix QXL VMs creation (thanks to the ez again).
+### Removed
+- Redundant code.
 
 ## 2020-05-27
 ### Added
@@ -33,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 2020-05-26
 ### Added
-- Virtio drivers injection option for Windows PT VMs.
+- Virtio drivers injection option for Windows guests.
 - VHD control script.
 ### Changed
 - Some cleaning up.
@@ -50,7 +52,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - VM iso name handling.
 - Custom VM scripts for new OVMF name.
-- README file.
 ### Fixed
 - OVMF per distribution entries.
 - VM iso selection.
@@ -69,7 +70,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Changed
 - Passthrough blueprints default GPU settings.
 - Now script asks before overwriting VM and VHD.
-- Minor semantics change.
 - MacOS iso name is no longer hardcoded.
 ### Fixed
 - Should work with all GPUs now.
