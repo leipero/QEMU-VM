@@ -20,7 +20,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 - Redundant code.
 
-
 ## 2020-05-27
 ### Added
 - USB devices (keyboard, mouse and joystick) are now in config file and ready for PT (manual).
@@ -34,7 +33,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Removed
 - Hardware configurations.
 
-
 ## 2020-05-26
 ### Added
 - Virtio drivers injection option for Windows guests.
@@ -45,7 +43,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Fixed
 - VMs configuration is now removed when VM is removed.
 - Windows virtio drivers check.
-
 
 ## 2020-05-25
 ### Added
@@ -61,7 +58,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Mouse for passthrough VMs.
 ### Removed
 - VHD name choice (to speed up creation process).
-
 
 ## 2020-05-24
 ### Added
@@ -83,7 +79,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - MacOS Firmware.
 - Redundant code.
 
-
 ## 2020-05-23
 ### Added
 - MacOS blueprint (passthrough and qxl).
@@ -100,7 +95,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - VirGL/Virtio-vga shortcuts.
 ### Removed
 - MacOS virsh script.
-
 
 ## 2020-05-22
 ### Added
@@ -120,9 +114,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Passthrough shortcuts.
 - Images path.
 ### Removed
-- Gnome terminal.
+- Gnome terminal dependency.
 - Windows virsh script.
-
 
 ## 2020-05-21
 ### Added
@@ -142,7 +135,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - VHD mount scripts.
 - Code supporting removed presets.
 
-
 ## 2020-05-20
 ### Added
 - This CHANGELOG file to hopefully serve as an evolving example of a standardized open source project CHANGELOG.
@@ -158,7 +150,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Root user no longer deals with user files.
 ### Removed
 - Old image creation script (images/create_image.sh).
-
 
 ## 2020/05/19
 - First creation.
