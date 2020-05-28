@@ -241,7 +241,7 @@ function check_iommu() {
 		autologintty3
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
-		echo -e "\033[1;36mNOTE: You can still use VMs with VirGL paravirtualization offering excellent performance.\033[0m"
+		echo -e "\033[1;36mNOTE: You can still use VMs with Virtio paravirtualization offering excellent performance.\033[0m"
 		vm_choice
 		chk_create
 		exit 1
@@ -474,7 +474,7 @@ function customvmname() {
 	if [ -z "${cstvmname//[a-zA-Z0-9]}" ] && [ -n "$cstvmname" ]; then
 		customvmoverwrite_check
 	else
-		echo "Ivalid input. No special characters allowed."
+		echo "Invalid input. No special characters allowed."
 		unset cstvmname
 		customvmname
 	fi
@@ -577,7 +577,7 @@ function askgpu_custom_pt() {
 function custom_vgpu() {
 	echo " Choose Virtual Graphic Card:"
 	echo "	1) QXL (compatible and fast 2D accelerator, no guest additions required)"
-	echo "	2) Virtio (2D, no OpenGL accleration)"
+	echo "	2) Virtio (2D paravirtualization, very fast, no OpenGL accleration)"
 	echo "	3) Virtio-GPU (3D paravirtualization, very fast, requires Linux guest with kernel >= 4.4 and mesa >=11.2)"
 	echo "	4) STD (default QEMU graphics, slow but compatible, very unfotunate name lol)"
 	until [[ $vgpuchoice =~ ^[1-4]$ ]]; do
@@ -607,7 +607,7 @@ function create_qxl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 }
 
@@ -625,7 +625,7 @@ function create_virgl() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
-	echo "VirGL needs special drivers for OS other than GNU/Linux, it offers freat performance but can be buggy (read \"docs\")."
+	echo "VirGL needs special drivers for OS other than GNU/Linux, it offers great performance but can be buggy (read \"docs\")."
 	echo "VirGL requires Linux guest with kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
 }
 
@@ -650,7 +650,7 @@ function custom_cores() {
 		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
-		echo "Ivalid input. Numerics only."
+		echo "Invalid input. Numerics only."
 		unset cstmcoresnpt
 		custom_cores
 	fi
@@ -663,7 +663,7 @@ function custom_ram() {
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
-		echo "Ivalid input. Numerics only."
+		echo "Invalid input. Numerics only."
 		unset cstmramnpt
 		custom_ram
 	fi
@@ -678,7 +678,7 @@ function macosvmname() {
 	if [ -z "${macosname//[a-zA-Z0-9]}" ] && [ -n "$macosname" ]; then
 		macosvmoverwrite_check
 	else
-		echo "Ivalid input. No special characters allowed."
+		echo "Invalid input. No special characters allowed."
 		unset macosname
 		macosvmname
 	fi
@@ -737,7 +737,7 @@ function create_macospt() {
 function askgpu_macospt_pt() {
 	echo "GPU Passthrough choice."
 	echo "	1) Default (no VBIOS, works for some GPUs)"
-	echo "	2) AMD (workaround for Windows driver bug)"
+	echo "	2) AMD (no VBIOS, workaround for Windows driver bug)"
 	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
 	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
 	until [[ $askgpupt =~ ^[1-4]$ ]]; do
@@ -786,7 +786,7 @@ function macos_cores() {
 		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
-		echo "Ivalid input. Numerics only."
+		echo "Invalid input. Numerics only."
 		unset mcoscoresnpt
 		macos_cores
 	fi
@@ -799,7 +799,7 @@ function macos_ram() {
 		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
-		echo "Ivalid input. Numerics only."
+		echo "Invalid input. Numerics only."
 		unset mcosramnpt
 		macos_ram
 	fi
@@ -1080,7 +1080,7 @@ function remindernopkgm() {
 	echo "Everything is Done."
 	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
 	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
-	echo -e "\033[1;31mWARNING: You must add your user to kvm and libvirt groups on your distribution.\033[0m"
+	echo -e "\033[1;31mWARNING: You must add your user to the kvm and libvirt groups in your distribution.\033[0m"
 	echo -e "\033[1;31mWARNING: You must enable IOMMU for your CPU in distribution boot manager.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in \"docs\" directory.\033[0m"
