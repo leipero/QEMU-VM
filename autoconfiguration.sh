@@ -784,7 +784,7 @@ function macos_cores() {
 	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-smp $CORES,sockets=1,cores=$(( $CORES / 2 ))/-smp $'${macosname}'_CORES,sockets=1,cores=$(( $'${macosname}'_CORES / 2 ))/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
 		echo "Ivalid input. Numerics only."
 		unset mcoscoresnpt
