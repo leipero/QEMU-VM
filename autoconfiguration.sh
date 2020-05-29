@@ -322,6 +322,10 @@ function check_dm() {
 ## Populate config file and scripts.
 
 function populate_base_config() {
+	## Create directory structure and log file
+	sudo -u $(logname) mkdir -p ${IMAGES_DIR}/iso
+	sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos
+	sudo -u $(logname) touch ${SCRIPT_DIR}/qemu_log.txt
 	## Populate config paths
 	sudo -u $(logname) sed -i -e '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
