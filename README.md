@@ -7,6 +7,7 @@ Some functionality is not implemented or it is removed, if you need such functio
 
 ## How to use
 Script requires superuser.
+
  Get:
 ```
 git clone https://github.com/leipero/vfio-autocfg.git && cd vfio-autocfg
