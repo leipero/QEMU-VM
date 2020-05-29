@@ -109,6 +109,7 @@ function continue_script() {
 	case $askconts in
 	[yY][eE][sS]|[yY])
 	    	populate_base_config
+	    	addgroups
 		check_iommu
 		vm_choice
 		chk_create
@@ -469,7 +470,7 @@ function vm_choice() {
 
 function create_customvm() {
 	echo "Custom VM creation:"
-	echo "Before you continue please copy your .iso or .img image into ${IMAGES_DIR}/iso/ directory."
+	echo "Before you continue please copy your .iso or .img image into \"${IMAGES_DIR}/iso/\" directory."
 	customvmname
 }
 
@@ -1089,7 +1090,6 @@ function remindernopkgm() {
 	echo "Everything is Done."
 	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
 	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
-	echo -e "\033[1;31mWARNING: You must add your user to the kvm and libvirt groups in your distribution.\033[0m"
 	echo -e "\033[1;31mWARNING: You must enable IOMMU for your CPU in distribution boot manager.\033[0m"
 	echo -e "\033[1;31mIMPORTANT NOTE: If not done in the script, ISO image paths must be set in the config file, otherwise VMs will NOT work.\033[0m"
 	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in \"docs\" directory.\033[0m"
