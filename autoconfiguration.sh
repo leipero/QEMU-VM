@@ -880,7 +880,6 @@ function download_virtio() {
 	[yY][eE][sS]|[yY])
 		sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
-		inject_virtio_windows
 		;;
 	[nN][oO]|[nN])
 		unset askvirtio
