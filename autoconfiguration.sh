@@ -408,9 +408,9 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		create_pt
+		legacy_bios
 		askgpu_custom_pt
 		check_virtio_win
-		inject_virtio_windows
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		reminder
@@ -420,6 +420,7 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		custom_vgpu
+		legacy_bios
 		custom_optset
 		check_virtio_win
 		scnopt_custom
@@ -669,6 +670,25 @@ function custom_ram() {
 	fi
 }
 
+function legacy_bios() {
+	echo " Use legacy BIOS instead of UEFI (for GPUs that do not support UEFI, otherwise select \"No\")."
+	read -r -p " Enable legacy BIOS? (default: No) " -e -i n lgbios
+	case $lgbios in
+	[yY][eE][sS]|[yY])
+		unset lgbios
+		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file=$OVMF_CODE/-boot menu=on,splash-time=5000/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	[nN][oO]|[nN])
+		unset lgbios
+		;;
+	*)
+		echo "Invalid input..."
+		unset lgbios
+		legacy_bios
+		;;
+	esac	
+}
+
 function create_macos() {
 	echo "MacOS VM creation:"
 	macosvmname
@@ -860,6 +880,7 @@ function download_virtio() {
 	[yY][eE][sS]|[yY])
 		sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
+		inject_virtio_windows
 		;;
 	[nN][oO]|[nN])
 		unset askvirtio
@@ -869,11 +890,12 @@ function download_virtio() {
 		unset askvirtio
 		download_virtio
 		;;
-	esac	
+	esac
+	inject_virtio_windows	
 }
 
 function inject_virtio_windows() {
-	read -r -p " Do you want to add virtio Windows drivers .iso to the VM? [Y/n] (default: Yes) " -e -i y injectvirtio
+	read -r -p " Do you want to add virtio Windows drivers .iso to the VM (needed for Windows guests)? [Y/n] " injectvirtio
 	case $injectvirtio in
 	[yY][eE][sS]|[yY])
 		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
