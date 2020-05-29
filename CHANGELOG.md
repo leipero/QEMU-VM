@@ -1,9 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2020-05-28
+## [0.9.1] - 2020-05-29
+### Added
+- Legacy BIOS support for custom VMs.
+- Versioning system.
+### Changed
+- Passthrough VMs no longer depend on TTY3 login.
+- RAM cache flush at VMs shutdown for passthrough.
+### Fixed
+- Wayland session for passthrough works now.
+### Removed
+- TTY3 autologin and it's supporting code (potential security risk and it's no longer needed).
+
+
+## [0.9.0] - 2020-05-28
 ### Added
 - Non-passthrough custom and macOS VMs RAM size and cores number option (useful for running multi VMs).
 ### Changed

@@ -238,7 +238,6 @@ function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
 		populate_iommu
-		autologintty3
 	else
 		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
 		echo -e "\033[1;36mNOTE: You can still use VMs with Virtio paravirtualization offering excellent performance.\033[0m"
@@ -671,7 +670,8 @@ function custom_ram() {
 }
 
 function legacy_bios() {
-	echo " Use legacy BIOS instead of UEFI (for GPUs that do not support UEFI, otherwise select \"No\")."
+	echo " Use legacy BIOS instead of UEFI (for passthrough GPUs that do not support UEFI select \"No\")."
+	echo " For non-passthrough VMs (using virtual graphic card), you can choose whatever you want BIOS or UEFI."
 	read -r -p " Enable legacy BIOS? (default: No) " -e -i n lgbios
 	case $lgbios in
 	[yY][eE][sS]|[yY])
@@ -934,9 +934,7 @@ function another_os() {
 ## Startup Scripts and Shortcuts
 
 function startupsc_custom() {
-		echo "sudo chvt 3
-wait
-cd ${SCRIPTS_DIR} && sudo nohup ./${cstvmname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstvmname}-vm
+		echo "cd ${SCRIPTS_DIR} && sudo nohup ./${cstvmname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstvmname}-vm
 		chmod +x /usr/local/bin/${cstvmname}-vm
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
@@ -972,9 +970,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 }
 
 function startupsc_macos() {
-		echo "sudo chvt 3
-wait
-cd ${SCRIPTS_DIR} && sudo nohup ./${macosname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${macosname}-vm
+		echo "cd ${SCRIPTS_DIR} && sudo nohup ./${macosname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${macosname}-vm
 		chmod +x /usr/local/bin/${macosname}-vm
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
@@ -1074,18 +1070,6 @@ USB3VID="$(lsusb | grep -i "joystick" | head -c 33 | cut -d ':' -f2 | tail -c5)"
 USB3PID="$(lsusb | grep -i "joystick" | head -c 33 | tail -c5 | sed -e 's/ //g')"
 USB4VID=""
 USB4PID=""
-
-function autologintty3() {
-	if [ -f /etc/systemd/system/getty@tty3.service.d/override.conf ] > /dev/null 2>&1; then
-		echo "TTY3 autologin already enabled."
-	else
-		echo -e "\033[1;36mNOTE: Setting up autologin for tty3, otherwise VMs will NOT work when SIngle GPU Passthrough is used.\033[0m"
-		mkdir -p /etc/systemd/system/getty@tty3.service.d/
-		echo "[Service]
-ExecStart=
-ExecStart=-/usr/bin/agetty --autologin" $(logname) '--noclear %I $TERM' > /etc/systemd/system/getty@tty3.service.d/override.conf
-	fi
-}
 
 function reminder() {
 	echo "Everything is Done."

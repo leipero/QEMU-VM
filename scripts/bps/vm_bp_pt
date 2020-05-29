@@ -20,9 +20,12 @@ echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages
 
 ## Kill the Display Manager
 systemctl stop $DSPMGR
-sleep 1
 
-## Kill the console
+## Stop user sessions services
+systemctl stop systemd-logind.service
+systemctl stop systemd-user-sessions.service
+
+## Unbind EFI framebuffer and console
 echo 0 > /sys/class/vtconsole/vtcon0/bind
 echo 0 > /sys/class/vtconsole/vtcon1/bind
 echo efi-framebuffer.0 > /sys/bus/platform/drivers/efi-framebuffer/unbind
@@ -67,16 +70,22 @@ virsh nodedev-reattach $VIRSH_PCI_AUDIO > /dev/null 2>&1
 virsh nodedev-reattach $VIRSH_GPU_AUDIO > /dev/null 2>&1
 virsh nodedev-reattach $VIRSH_GPU > /dev/null 2>&1
 
-## Reload the framebuffer and console
+## Bind EFI framebuffer and console
 echo 1 > /sys/class/vtconsole/vtcon0/bind
 #nvidia-xconfig --query-gpu-info > /dev/null 2>&1
 echo "efi-framebuffer.0" > /sys/bus/platform/drivers/efi-framebuffer/bind
 
-## Unload hugepages
-echo 0 > /proc/sys/vm/nr_hugepages
+## Start user sessions services
+systemctl start systemd-user-sessions.service
+systemctl start systemd-logind.service
 
 ## Reload the Display Manager
 systemctl start $DSPMGR
+
+## Unload hugepages
+echo 0 > /proc/sys/vm/nr_hugepages
+sysctl -qw vm.drop_caches=1
+sysctl -qw vm.compact_memory=1
 
 ## If libvirtd was stopped then stop it
 [[ $LIBVIRTD == "STOPPED" ]] && systemctl stop libvirtd

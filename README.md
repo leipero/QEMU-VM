@@ -22,12 +22,10 @@ sudo bash autoconfiguration.sh
 ## Known problems
 - Users must extract, edit (in case of nvidia) and load VBIOS to the VM manually.
 - Script relies on logged user and sudo or su commands in some parts.
-- Wayland session was not tested at all and will likely not work.
+- Wayland session will not return display after passthrough VM is down.
 
 ## TODO
-- BIOS based VMs for passthrough.
-- Better way to unbind/bind VC, devices and handle DM.
-- Add wayland support.
+- Better way to unbind/bind devices.
 - More sane GPU detection (for multi GPU support).
 
 ## Sources links
