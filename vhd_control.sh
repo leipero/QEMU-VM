@@ -37,7 +37,7 @@ function vhdmount() {
 	wait
 	ls -1 -I firmware -I macos -I iso $IMGDIR
 	read -r -p "Type/copy the name of the VHD to mount (inc. extension):" vhdmnt
-	sudo qemu-nbd --nocache --aio=threads --connect=/dev/nbd0 ${IMGDIR}/${vhdmnt}
+	sudo qemu-nbd --nocache --aio=native --connect=/dev/nbd0 ${IMGDIR}/${vhdmnt}
 	wait
 	sudo fdisk /dev/nbd0 -l
 	read -r -p "Choose partition to mount (numeric only, following nbd0p):" vhdmntprt
