@@ -54,7 +54,7 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -object input-linux,id=kbd,evdev=/dev/input/by-id/$EVENTIF01,grab_all=on,repeat=on \
   -object input-linux,id=kbd2,evdev=/dev/input/by-id/$EVENTKBD,grab_all=on,repeat=on \
   -object input-linux,id=mouse,evdev=/dev/input/by-id/$EVENTMOUSE \
-  -drive id=disk0,if=virtio,cache=off,aio=native,format=qcow2,file=$DUMMY_IMG \
+  -drive if=virtio,aio=native,cache=none,format=qcow2,file=$DUMMY_IMG \
   -drive file=$DUMMY_ISO,index=1,media=cdrom >> $LOG 2>&1 &
 
 ## Wait for QEMU

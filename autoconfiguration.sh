@@ -399,7 +399,7 @@ function populate_iommu() {
 function vm_choice() {
 	echo " Choose VM Type:"
 	echo "	1) Custom OS (VGA passthrough)"
-	echo "	2) Custom OS (QXL/Virtio/STD - no passthrough)"
+	echo "	2) Custom OS (Virtio/QXL/STD - no passthrough)"
 	echo "	3) macOS (VGA passthrough)"
 	echo "	4) macOS (QXL - no passthrough)"
 	echo "	5) Remove existing VM"
@@ -412,9 +412,9 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		create_pt
+		io_uring
 		legacy_bios
 		askgpu_custom_pt
-		check_virtio_win
 		startupsc_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		reminder
@@ -424,9 +424,9 @@ function vm_choice() {
 		unset VM_CHOICE
 		create_customvm
 		custom_vgpu
+		io_uring
 		legacy_bios
 		custom_optset
-		check_virtio_win
 		scnopt_custom
 		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
 		echo "Virtual Machine Created."
@@ -547,6 +547,26 @@ function create_pt() {
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 }
 
+function io_uring() {
+	echo " Use io_uring AIO (better performance, requires QEMU >=5.0, Linux Kernel >=5.1)"
+	read -r -p " Enable io_uring [Y/n] (default: Yes) " -e -i y iouringin
+	case $iouringin in
+	[yY][eE][sS]|[yY])
+		unset iouringin
+		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/-drive aio=io_uring,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	[nN][oO]|[nN])
+		unset iouringin
+		check_virtio_win
+		;;
+	*)
+		echo "Invalid input..."
+		unset iouringin
+		io_uring
+		;;
+	esac
+}
+
 function askgpu_custom_pt() {
 	echo "GPU Passthrough choice."
 	echo "	1) Standard (no VBIOS, no workarounds)"
@@ -581,9 +601,9 @@ function askgpu_custom_pt() {
 
 function custom_vgpu() {
 	echo " Choose Virtual Graphic Card:"
-	echo "	1) QXL (compatible and fast 2D accelerator, no guest additions required)"
-	echo "	2) Virtio (2D paravirtualization, very fast, no OpenGL accleration)"
-	echo "	3) Virtio-GPU (3D paravirtualization, very fast, requires Linux guest with kernel >= 4.4 and mesa >=11.2)"
+	echo "	1) Virtio (2D paravirtualization, very fast, no OpenGL accleration)"
+	echo "	2) Virtio-GPU (3D paravirtualization, very fast, requires Linux guest with kernel >= 4.4 and mesa >=11.2)"
+	echo "	3) QXL (compatible and fast 2D accelerator, no guest additions required)"
 	echo "	4) STD (default QEMU graphics, slow but compatible, very unfotunate name lol)"
 	until [[ $vgpuchoice =~ ^[1-4]$ ]]; do
 		read -r -p " Graphic card choice [1-4]: " vgpuchoice
@@ -591,15 +611,15 @@ function custom_vgpu() {
 	case $vgpuchoice in
 	1)
 		unset vgpuchoice
-		create_qxl
+		create_virtio
 		;;
 	2)
 		unset vgpuchoice
-		create_virtio
+		create_virgl
 		;;
 	3)
 		unset vgpuchoice
-		create_virgl
+		create_qxl
 		;;
 	4)
 		unset vgpuchoice
@@ -677,7 +697,7 @@ function custom_ram() {
 function legacy_bios() {
 	echo " Use legacy BIOS instead of UEFI (for passthrough GPUs that do not support UEFI select \"No\")."
 	echo " For non-passthrough VMs (using virtual graphic card), you can choose whatever you want BIOS or UEFI."
-	read -r -p " Enable legacy BIOS? (default: No) " -e -i n lgbios
+	read -r -p " Enable legacy BIOS? [Y/n] (default: No) " -e -i n lgbios
 	case $lgbios in
 	[yY][eE][sS]|[yY])
 		unset lgbios
