@@ -495,8 +495,8 @@ function create_pt() {
 
 function io_uring() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "io_uring requires QEMU >=5.0, Linux Kernel >=5.1" \
-		--yesno "Enable io_uring AIO? " 5 60
+		--title "AIO Settings." \
+		--yesno "Enable io_uring AIO (QEMU>=5.0, linux>=5.1)? " 5 60
 	iouringin=$?
 	case $iouringin in
 	0)
@@ -880,7 +880,7 @@ Name=${cstvmname} VM
 Exec=xterm -e ${cstvmname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
-	echo -e "\033[1;36mCreated \"${cstvmname}\" VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu.\033[0m"
+	echo -e "Created \"${cstvmname}\" VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu."
 }
 
 function scnopt_custom() {
@@ -912,7 +912,7 @@ Name=${macosname} VM
 Exec=xterm -e ${macosname}-vm
 Icon=${ICONS_DIR}/apple.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
-	echo -e "\033[1;36mCreated \"${macosname}\" VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu.\033[0m"
+	echo -e "Created \"${macosname}\" VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu."
 }
 
 function shortcut_macosqxl() {
