@@ -478,6 +478,10 @@ function customvhdsize() {
 }
 
 function customvm_iso() {
+	(echo "Use SPACE to select and ARROW keys to navigate!"
+	echo "Copy your iso to:"
+	echo "${IMAGES_DIR}/iso/"
+	echo "directory before you press enter and continue.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 10 60
 	isoname=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Select ISO." --stdout \
 		--nocancel --title "Select installation .iso file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
@@ -940,6 +944,7 @@ Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desk
 ## Remove VM
 
 function remove_vm() {
+	(echo "Use SPACE to select and ARROW keys to navigate!") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 7 60
 	rmvmslct=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Remove Virtual Machine." --stdout \
 		--nocancel --title "Select VM for removal:" --fselect ${SCRIPTS_DIR}/ 20 60)
