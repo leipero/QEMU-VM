@@ -476,7 +476,7 @@ function create_customvm() {
 
 function customvmname() {
 	read -r -p " Choose name for your VM: " cstvmname
-	if [ -z "${cstvmname//[a-zA-Z0-9]}" ] && [ -n "$cstvmname" ]; then
+	if [ -z "${cstvmname//[a-zA-Z0-9_]}" ] && [ -n "$cstvmname" ]; then
 		customvmoverwrite_check
 	else
 		echo "Invalid input. No special characters allowed."
@@ -720,7 +720,7 @@ function create_macos() {
 }
 function macosvmname() {
 	read -r -p " Choose name for your MacOS VM: " macosname
-	if [ -z "${macosname//[a-zA-Z0-9]}" ] && [ -n "$macosname" ]; then
+	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ]; then
 		macosvmoverwrite_check
 	else
 		echo "Invalid input. No special characters allowed."
