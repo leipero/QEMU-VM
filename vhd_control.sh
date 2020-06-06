@@ -56,7 +56,7 @@ function vhdunmount() {
 	wait
 	sudo qemu-nbd --disconnect /dev/nbd0
 	wait
-	sudo modprobe -r nbd
+	sudo rmmod nbd
 	wait
 	rm -d $VHD_MOUNT_POINT
 	else
