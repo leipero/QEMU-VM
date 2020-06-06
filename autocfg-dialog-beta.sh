@@ -432,7 +432,7 @@ function customvmname() {
 	cstvmname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Name." \
 		--nocancel --inputbox "Choose name for your VM (no special characters):" 7 60 --output-fd 1)
-	if [ -z "${cstvmname//[a-zA-Z0-9]}" ] && [ -n "$cstvmname" ]; then
+	if [ -z "${cstvmname//[a-zA-Z0-9_]}" ] && [ -n "$cstvmname" ]; then
 		customvmoverwrite_check
 	else
 		unset cstvmname
@@ -485,9 +485,13 @@ function customvm_iso() {
 	isoname=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Select ISO." --stdout \
 		--nocancel --title "Select installation .iso file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
-	ISOVMSET=''${cstvmname}'_ISO='${isoname}''
-	sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
-	sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
+	if [ -n "$isoname" ]; then
+		ISOVMSET=''${cstvmname}'_ISO='${isoname}''
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
+	else
+		customvm_iso
+	fi
 }
 
 function create_pt() {
@@ -654,7 +658,7 @@ function macosvmname() {
 	macosname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Name." \
 		--nocancel --inputbox "Choose name for your MacOS VM (no special characters):" 7 60 --output-fd 1)
-	if [ -z "${macosname//[a-zA-Z0-9]}" ] && [ -n "$macosname" ]; then
+	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ]; then
 		macosvmoverwrite_check
 	else
 		unset macosname
@@ -950,16 +954,20 @@ function remove_vm() {
 		--nocancel --title "Select VM for removal:" --fselect ${SCRIPTS_DIR}/ 20 60)
 	filename=$(basename -- "$rmvmslct")
 	rmvmname="${filename%.*}"
-	rm ${SCRIPTS_DIR}/${rmvmname}.sh
-	rm ${IMAGES_DIR}/${rmvmname}.qcow2
-	rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
-	rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
-	sudo -u $(logname) sed -i -e '/^## '${rmvmname}'/c\' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
-	echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
+	if [ -z "${rmvmname//[a-zA-Z0-9_]}" ] && [ -n "$rmvmname" ]; then
+		rm ${SCRIPTS_DIR}/${rmvmname}.sh
+		rm ${IMAGES_DIR}/${rmvmname}.qcow2
+		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
+		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
+		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
+	else
+		remove_vm
+	fi
 }
 
 ##***************************************************************************************************************************
