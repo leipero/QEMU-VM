@@ -823,7 +823,7 @@ function download_macos() {
 
 function check_virtio_win() {
 	if [ -f ${IMAGES_DIR}/iso/virtio-win.iso ] > /dev/null 2>&1; then
-		wait
+		inject_virtio_windows
 	else
 		download_virtio
 	fi
