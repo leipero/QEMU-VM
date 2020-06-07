@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2020-06-07
+### Added
+- Dialog based GUI for vhd_control script.
+### Changed
+- Script dealing with elevated privileges.
+### Fixed
+- VM names.
+### Removed
+- Autoconfiguration cli.
+
 ## [0.9.2] - 2020-06-06
 ### Added
 - Dialog based GUI beta script (autocfg-dialog-beta.sh).

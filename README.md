@@ -21,14 +21,13 @@ sudo bash autoconfiguration.sh
 [Check the wiki for more information and guides on how to make everything work](https://gitlab.com/YuriAlek/vfio/wikis/Home).
 
 ## Known problems
-- Users must extract, edit (in case of nvidia) and load VBIOS to the VM manually.
-- Script relies on logged user and sudo or su commands in some parts.
+- Users must extract, edit (in case of nvidia) VBIOS manually.
+- Script relies on logged user and sudo command.
 - Wayland session will not return display after passthrough VM is down.
 
 ## TODO
 - Fix wayland display issue at VM shutdown.
 - Better way to unbind/bind devices.
-- More sane GPU detection (for multi GPU support).
 
 ## Sources links
 - Yuri scripts

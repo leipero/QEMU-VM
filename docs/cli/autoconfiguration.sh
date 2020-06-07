@@ -5,57 +5,68 @@ export LC_ALL=C
 [ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
 
 function welcomescript() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Welcome." \
-		--yesno "Welcome to the Single GPU Passthrought configuration script. \n Note: This script attempts to do as little assumptions as possible, but some assumptions were made, introducig a chance that script may not work properly. Be advised. Do you wish to continue? " 10 60
-	wlcmcontinue=$?
-	case $wlcmcontinue in
-	0)
+	clear
+	echo "----------------------------------------------------------------"
+	echo "- Welcome to the Single GPU Passthrought configuration script. -"
+	echo "-  Note: This script attempts to do as little assumptions as   -"
+	echo "-  possible, but some assumptions were made, introducig a      -"
+	echo "-   chance that script may not work properly. Be advised.      -"
+	echo "----------------------------------------------------------------"
+	echo ""
+	echo " Do you wish to continue?"
+	read -r -p " I understand and wish to continue [Y/n] (default: Yes) " -e -i y startchoice
+	case $startchoice in
+	[yY][eE][sS]|[yY])
 		checkos_install
 		;;
-	1)
-		clear
+	[nN][oO]|[nN])
 		exit 0
+		;;
+	*)
+		echo "Invalid input, please answer with Yes or No."
+		unset startchoice
+		welcomescript
 		;;
 	esac
 }
 
 function checkos_install() {
 	if command -v apt > /dev/null 2>&1; then
-		(populate_base_config
+		populate_base_config
 		install_dep_apt
 		populate_ovmf
 		addgroups
 		enable_earlykms_apt
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v yum > /dev/null 2>&1; then
-		(populate_base_config
+		populate_base_config
 		install_dep_yum
 		populate_ovmf
 		addgroups
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v zypper > /dev/null 2>&1; then
-		(populate_base_config
+		populate_base_config
 		install_dep_zypper
 		populate_ovmf
 		addgroups
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v pacman > /dev/null 2>&1; then
-		(populate_base_config
+		populate_base_config
 		install_dep_pacman
 		populate_ovmf
 		addgroups
 		enable_earlykms_pacman
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	else
+		echo "No compatible package manager found."
 		continue_script
 	fi
 }
@@ -69,38 +80,50 @@ function first_run() {
 }
 
 function notfirstrun() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "First Run Check." \
-		--yesno "It seems that this is not the first run of the configuration script, if your system is already configured you may wish to skip to the VM creation part.\n This will save some time if IOMMU groups, loaders and paths are already properly configured. If you however made some changes to the hardware, software or changed script location, you may wish to run checks again and you should answer NO." 12 60
-	nfrinput=$?
+	echo " It seems that this is not the first run of the configuration script, if your system is already configured you may"
+	echo "  wish to skip to the VM creation part. This will save some time if IOMMU groups, loaders and paths are already"
+	echo "  properly configured. If you however made some changes to the hardware, software or changed script location"
+	echo "  you may wish to run checks again and you should answer NO."
+	echo ""
+	read -r -p " Do you wish to skip to the VM creation part? [Y/n] (default: Yes) " -e -i y nfrinput
 	case $nfrinput in
-	0)
+	[yY][eE][sS]|[yY])
+		unset nfrinput
 		vm_choice
 		;;
-	1)
+	[nN][oO]|[nN])
+		unset nfrinput
 		welcomescript
+		;;
+	*)
+		echo "Invalid input, please answer with Yes or No."
+		unset nfrinput
+		notfirstrun
 		;;
 	esac
 }
 
 function continue_script() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Continue Setup." \
-		--yesno "You must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue. \n Continue?" 7 60
-	askconts=$?
+	echo -e "\033[1;31mYou must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue.\033[0m"
+	read -r -p " Do you want to continue with script? [Y/n] " askconts
 	case $askconts in
-	0)
-	    	(populate_base_config
+	[yY][eE][sS]|[yY])
+	    	populate_base_config
 	    	addgroups
-		check_iommu) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		check_iommu
 		vm_choice
 		chk_create
-		remindernopkgm | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 14 60
+		remindernopkgm
 		exit 1
 		;;
-	1)
-		clear
+	[nN][oO]|[nN])
+		unset askconts
 		exit 1
+		;;
+	*)
+		echo "Invalid input..."
+		unset askconts
+		continue_script
 		;;
 	esac
 }
@@ -135,7 +158,7 @@ function install_dep_apt() {
 		echo "Installing libvirglrenderer, please wait..."
 		apt-get install -y libvirglrenderer0 libvirglrenderer1 > /dev/null 2>&1
 	fi
-	echo "Dependencies are installed."
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function install_dep_yum() {
@@ -144,7 +167,7 @@ function install_dep_yum() {
 	echo "Installing packages, please wait."
 	yum -yq groups install "virtualization"
 	uym -yq install curl xterm git
-	echo "Dependencies are installed."
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function install_dep_zypper() {
@@ -152,18 +175,18 @@ function install_dep_zypper() {
 	OVMF_V="/usr/share/qemu/ovmf-x86_64-ms-vars.bin"
 	echo "Installing packages, please wait."
 	zypper -n install patterns-openSUSE-kvm_server patterns-server-kvm_tools ovmf xterm curl
-	echo "Dependencies are installed."
+	echo -e "\033[1;36mDependencies are installed.\033[0m"
 }
 
 function install_dep_pacman() {
 	OVMF_C="/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
 	OVMF_V="/usr/share/edk2-ovmf/x64/OVMF_VARS.fd"
 	if pacman -Q qemu ovmf libvirt virt-manager virglrenderer edk2-ovmf curl xterm git > /dev/null 2>&1; then
-		echo "Dependencies are already installed."
+		echo -e "\033[1;36mDependencies are already installed.\033[0m"
 	else
 		echo "Installing dependencies, please wait..."
 		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null
-		echo "Dependencies are installed."
+		echo -e "\033[1;36mDependencies are installed.\033[0m"
 	fi
 }
 
@@ -172,7 +195,7 @@ function install_dep_pacman() {
 
 function addgroups() {
 	if groups $(logname) | grep kvm | grep libvirt > /dev/null 2>&1; then
-		echo "User is already in groups."
+		echo -e "\033[1;36mUser is already in groups.\033[0m"
 	else
 		usermod -a -G libvirt $(logname)
 		usermod -a -G kvm $(logname)
@@ -185,8 +208,9 @@ function addgroups() {
 
 function enable_earlykms_apt() {
 	if grep -wq "${GPU}" /etc/initramfs-tools/modules > /dev/null 2>&1; then
-		echo "Early KMS is already enabled."
+		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
+		echo "Enabling early KMS..."
 		echo "${GPU}" >> /etc/initramfs-tools/modules
 		update-initramfs -u
 	fi
@@ -194,8 +218,9 @@ function enable_earlykms_apt() {
 
 function enable_earlykms_pacman() {
 	if grep -wq "MODULES=(${GPU}.*" /etc/mkinitcpio.conf > /dev/null 2>&1; then
-		echo "Early KMS is already enabled."
+		echo -e "\033[1;36mEarly KMS is already enabled.\033[0m"
 	else
+		echo "Enabling early KMS..."
 		sed -i -e "s/^MODULES=(/MODULES=(${GPU} /g" /etc/mkinitcpio.conf
 		for lnxkrnl in /etc/mkinitcpio.d/*.preset; do mkinitcpio -p "$lnxkrnl";  done
 	fi
@@ -212,11 +237,11 @@ function setup_bootloader() {
 
 function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
-		echo "AMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI."
+		echo -e "\033[1;36mAMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI.\033[0m"
 		populate_iommu
 	else
-		echo "AMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it."
-		echo "NOTE: You can still use VMs with Virtio paravirtualization offering excellent performance."
+		echo -e "\033[1;31mAMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it.\033[0m"
+		echo -e "\033[1;36mNOTE: You can still use VMs with Virtio paravirtualization offering excellent performance.\033[0m"
 		vm_choice
 		chk_create
 		exit 1
@@ -232,36 +257,42 @@ function set_cpu_iommu() {
 }
 
 function find_grub() {
+	echo "Searching for GRUB..."
 	if [ -f /etc/default/grub ] > /dev/null 2>&1; then
 		enable_iommu_grub
 	else
+		echo "GRUB not found."
 		find_systemdb
 	fi
 }
 
 function find_systemdb() {
+	echo "Searching for Systemd-boot"
 	if bootctl | grep -i "systemd-boot" > /dev/null ; then
 		SDBP="$(bootctl | grep -i "source" | awk '{print $2}')"
 		enable_iommu_systemdb
 	else
-		echo "Boot Manager not found, please enable IOMMU manually in your boot manager."
+		echo "Systemd-boot not found."
+		echo -e "\033[1;31mBoot Manager not found, please enable IOMMU manually in your boot manager.\033[0m"
 	fi
 }
 
 function enable_iommu_grub() {
 	if grep -q "${IOMMU_CPU}_iommu=on" /etc/default/grub ; then
-		echo "IOMMU is already enabled."
+		echo -e "\033[1;36mIOMMU is already enabled.\033[0m"
 	else
 		sed -i -e "s/iommu=pt//g" /etc/default/grub
 		sed -i -e "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${IOMMU_CPU}_iommu=on iommu=pt /g" /etc/default/grub
+		echo "IOMMU line added to the GRUB configuration file(s)."
+		echo "Generating GRUB configuration file, please wait..."
 		grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
-		echo "IOMMU enabled GRUB configuration file generated."
+		echo "GRUB configuration file generated."
 	fi
 }
 
 function enable_iommu_systemdb() {
 	if grep -q "${IOMMU_CPU}_iommu=on" ${SDBP} ; then
-		echo "IOMMU is already enabled."
+		echo -e "\033[1;36mIOMMU is already enabled.\033[0m"
 	else
 		sed -i -e "s/iommu=pt//g" ${SDBP}
 		sed -i -e "/options/s/$/ ${IOMMU_CPU}_iommu=on iommu=pt/" ${SDBP}
@@ -330,6 +361,7 @@ function populate_ovmf() {
 }
 
 function populate_iommu() {
+	echo "Populating config file for IOMMU, please wait..."
 	## Get IOMMU groups
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
 	IOMMU_GPU_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/^[ \t]*//' | head -c 7)"
@@ -365,76 +397,89 @@ function populate_iommu() {
 ## VM creation and configuration.
 
 function vm_choice() {
-	vmtypech=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Virtual Machine Selection." \
-		--nocancel \
-		--menu "Select VM Type:" 13 60 6 \
-		"1. Custom OS PT"   "- VGA passthrough" \
-		"2. Custom OS"      "- Virtio/QXL/STD (no pt)" \
-		"3. macOS PT"       "- VGA passthrough" \
-		"4. macOS"          "- QXL (no passthrough)" \
-		"5. Remove existing VM" "" \
-		"6. Exit VM Choice" "" 3>&1 1>&2 2>&3)
-	case $vmtypech in
-	"1. Custom OS PT")
+	echo " Choose VM Type:"
+	echo "	1) Custom OS (VGA passthrough)"
+	echo "	2) Custom OS (Virtio/QXL/STD - no passthrough)"
+	echo "	3) macOS (VGA passthrough)"
+	echo "	4) macOS (QXL - no passthrough)"
+	echo "	5) Remove existing VM"
+	echo "	6) Exit VM Choice"
+	until [[ $VM_CHOICE =~ ^[1-6]$ ]]; do
+		read -r -p " VM type choice [1-6]: " VM_CHOICE
+	done
+	case $VM_CHOICE in
+	1)
+		unset VM_CHOICE
 		create_customvm
 		create_pt
 		io_uring
 		legacy_bios
 		askgpu_custom_pt
 		startupsc_custom
-		reminder | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 13 60
+		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
+		reminder
 		another_os
 		;;
-	"2. Custom OS")
+	2)
+		unset VM_CHOICE
 		create_customvm
 		custom_vgpu
 		io_uring
 		legacy_bios
 		custom_optset
 		scnopt_custom
-		remindernpt | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 10 60
+		unset IMGVMSET ISOVMSET cstvmname cstvhdsize isoname
+		echo "Virtual Machine Created."
+		remindernpt
 		another_os
 		;;
-	"3. macOS PT")
+	3)
+		unset VM_CHOICE
 		create_macos
 		create_macospt
 		askgpu_macospt_pt
 		download_macos
 		startupsc_macos
-		reminder | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 13 60
+		unset IMGVMSET macosname macvhdsize
+		echo "Virtual Machine Created."
+		reminder
 		another_os
 		;;
-	"4. macOS")
+	4)
+		unset VM_CHOICE
 		create_macos
 		create_macosqxl
 		macos_optset
 		download_macos
 		shortcut_macosqxl
-		remindernpt | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 10 60
+		unset IMGVMSET macosname macvhdsize
+		echo "Virtual Machine Created."
+		remindernpt
 		another_os
 		;;
-	"5. Remove existing VM")
+	5)
+		unset VM_CHOICE
 		remove_vm
 		another_os
 		;;
-	"6. Exit VM Choice")
-		clear
+	6)
+		unset VM_CHOICE
 		;;
 	esac
 }
 
 function create_customvm() {
+	echo "Custom VM creation:"
+	echo "Before you continue please copy your .iso or .img image into \"${IMAGES_DIR}/iso/\" directory."
 	customvmname
 }
 
 function customvmname() {
-	cstvmname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VM Name." \
-		--nocancel --inputbox "Choose name for your VM (no special characters):" 7 60 --output-fd 1)
+	read -r -p " Choose name for your VM: " cstvmname
 	if [ -z "${cstvmname//[a-zA-Z0-9_]}" ] && [ -n "$cstvmname" ]; then
 		customvmoverwrite_check
 	else
+		echo "Invalid input. No special characters allowed."
 		unset cstvmname
 		customvmname
 	fi
@@ -442,16 +487,21 @@ function customvmname() {
 
 function customvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
-		dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VM Overwrite." \
-		--yesno "VM named \"${cstvmname}\" already exist.\n Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)?" 7 60
-		askcstovrw=$?
+		echo "VM named \"${cstvmname}\" already exist."
+		read -r -p "Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)? [Y/n] " askcstovrw
 		case $askcstovrw in
-		0)
+		[yY][eE][sS]|[yY])
+			unset askcstovrw
 			customvhdsize
 			;;
-		1)
+		[nN][oO]|[nN])
+			unset askcstovrw
 			customvmname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askcstovrw
+			customvmoverwrite_check
 			;;
 		esac
 	else
@@ -460,17 +510,16 @@ function customvmoverwrite_check() {
 }
 
 function customvhdsize() {
-	cstvhdsize=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VHD Size." \
-		--nocancel --inputbox "Choose your \"${cstvmname}\" VHD size (in GB, numeric only):" 7 60 --output-fd 1)
+	read -r -p " Choose your \"${cstvmname}\" VHD size (in GB, numeric only): " cstvhdsize
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
+		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
 		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo ${IMGVMSET} >> ${CONFIG_LOC}
 	else
+		echo "Invalid input, use only numerics."
 		unset cstvhdsize
 		customvhdsize
 	fi
@@ -478,18 +527,15 @@ function customvhdsize() {
 }
 
 function customvm_iso() {
-	(echo "Use SPACE to select and ARROW keys to navigate!"
-	echo "Copy your iso to:"
-	echo "${IMAGES_DIR}/iso/"
-	echo "directory before you press enter and continue.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 10 60
-	isoname=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Select ISO." --stdout \
-		--nocancel --title "Select installation .iso file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
-	if [ -n "$isoname" ]; then
-		ISOVMSET=''${cstvmname}'_ISO='${isoname}''
+	ls -R -1 ${IMAGES_DIR}/iso/
+	read -r -p "Type/copy the name of desired iso including extension (.iso, .img etc.): " isoname
+	if [ -z "${isoname//[a-zA-Z0-9_.\-]}" ] && [ -n "$isoname" ]; then
+		ISOVMSET=''${cstvmname}'_ISO=$IMAGES/iso/'${isoname}''
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
+		echo "You have to provide .iso or .img file name (including extension) for VM to work."
+		echo "Copy file to ${IMAGES_DIR}/iso/ directory if not on the list above."
 		customvm_iso
 	fi
 }
@@ -502,69 +548,81 @@ function create_pt() {
 }
 
 function io_uring() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "AIO Settings." \
-		--yesno "Enable io_uring AIO (QEMU>=5.0, linux>=5.1)? " 5 60
-	iouringin=$?
+	echo " Use io_uring AIO (better performance, requires QEMU >=5.0, Linux Kernel >=5.1)"
+	read -r -p " Enable io_uring [Y/n] (default: Yes) " -e -i y iouringin
 	case $iouringin in
-	0)
+	[yY][eE][sS]|[yY])
+		unset iouringin
 		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/-drive aio=io_uring,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
-	1)
+	[nN][oO]|[nN])
+		unset iouringin
 		check_virtio_win
+		;;
+	*)
+		echo "Invalid input..."
+		unset iouringin
+		io_uring
 		;;
 	esac
 }
 
 function askgpu_custom_pt() {
-	vgpuchoice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "GPU Passthrough choice." \
-		--nocancel \
-		--menu "Choose device to pass:" 11 60 4 \
-		"1. Standard"        "- no VBIOS, no workarounds" \
-		"2. AMD"             "- workaround for Windows driver bug" \
-		"3. GPU VBIOS"       "- needs manual extraction and editing in case of nvidia" \
-		"4. GPU VBIOS AMD"   "- for AMD GPUs that need Windows bug workaround, needs manual extraction" 3>&1 1>&2 2>&3)
-	case $vgpuchoice in
-	"1. Standard")
-		unset vgpuchoice
+	echo "GPU Passthrough choice."
+	echo "	1) Standard (no VBIOS, no workarounds)"
+	echo "	2) AMD (workaround for Windows driver bug)"
+	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
+	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
+	until [[ $askgpupt =~ ^[1-4]$ ]]; do
+		read -r -p "Choose device to pass [1-4]: " askgpupt
+	done
+	case $askgpupt in
+	1)
+		unset askgpupt
 		;;
-	"2. AMD")
+	2)
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
 		;;
-	"3. GPU VBIOS")
+	3)
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
 		;;
-	"4. GPU VBIOS AMD")
+	4)
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		unset askgpupt
 		;;
 	esac
 }
 
 function custom_vgpu() {
-	vgpuchoice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Virtual GPU Selection." \
-		--nocancel \
-		--menu "Choose Virtual Graphic Card:" 11 60 4 \
-		"1. Virtio"   "- 2D, very fast, no OpenGL accleration" \
-		"2. VirtGL"   "- 3D, kernel >= 4.4 and mesa >=11.2" \
-		"3. QXL"      "- compatible and relatively fast 2D" \
-		"4. STD"      "- default QEMU graphics, compatible" 3>&1 1>&2 2>&3)
+	echo " Choose Virtual Graphic Card:"
+	echo "	1) Virtio (2D paravirtualization, very fast, no OpenGL accleration)"
+	echo "	2) Virtio-GPU (3D paravirtualization, very fast, requires Linux guest with kernel >= 4.4 and mesa >=11.2)"
+	echo "	3) QXL (compatible and fast 2D accelerator, no guest additions required)"
+	echo "	4) STD (default QEMU graphics, slow but compatible, very unfotunate name lol)"
+	until [[ $vgpuchoice =~ ^[1-4]$ ]]; do
+		read -r -p " Graphic card choice [1-4]: " vgpuchoice
+	done
 	case $vgpuchoice in
-	"1. Virtio")
+	1)
+		unset vgpuchoice
 		create_virtio
 		;;
-	"2. VirtGL")
+	2)
+		unset vgpuchoice
 		create_virgl
 		;;
-	"3. QXL")
+	3)
+		unset vgpuchoice
 		create_qxl
 		;;
-	"4. STD")
+	4)
+		unset vgpuchoice
 		create_std
 		;;
 	esac
@@ -592,6 +650,8 @@ function create_virgl() {
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	echo "VirGL needs special drivers for OS other than GNU/Linux, it offers great performance but can be buggy (read \"docs\")."
+	echo "VirGL requires Linux guest with kernel >=4.4 and mesa >=11.2 compiled with 'gallium-drivers=virgl' option."
 }
 
 function create_std() {
@@ -603,64 +663,67 @@ function create_std() {
 }
 
 function custom_optset() {
+	echo "Set number of CPU cores and RAM amount:"
 	custom_cores
 	custom_ram
 }
 
 function custom_cores() {
-	cstmcoresnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Set VM Cores." \
-		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
+	read -r -p " Set VM number of cores (numeric only): " cstmcoresnpt
 	if [ -z "${cstmcoresnpt//[0-9]}" ] && [ -n "$cstmcoresnpt" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
+		echo "Invalid input. Numerics only."
 		unset cstmcoresnpt
 		custom_cores
 	fi
 }
 
 function custom_ram() {
-	cstmramnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Set VM RAM." \
-		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
+	read -r -p " Set VM RAM amount (in GB, numeric only): " cstmramnpt
 	if [ -z "${cstmramnpt//[0-9]}" ] && [ -n "$cstmramnpt" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
+		echo "Invalid input. Numerics only."
 		unset cstmramnpt
 		custom_ram
 	fi
 }
 
 function legacy_bios() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "BIOS/UEFI VM Settings." \
-		--yesno "Enable legacy BIOS?" 5 60
-	lgbios=$?
+	echo " Use legacy BIOS instead of UEFI (for passthrough GPUs that do not support UEFI select \"No\")."
+	echo " For non-passthrough VMs (using virtual graphic card), you can choose whatever you want BIOS or UEFI."
+	read -r -p " Enable legacy BIOS? [Y/n] (default: No) " -e -i n lgbios
 	case $lgbios in
-	0)
+	[yY][eE][sS]|[yY])
+		unset lgbios
 		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file=$OVMF_CODE/-boot menu=on,splash-time=5000/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
-	1)
+	[nN][oO]|[nN])
 		unset lgbios
+		;;
+	*)
+		echo "Invalid input..."
+		unset lgbios
+		legacy_bios
 		;;
 	esac	
 }
 
 function create_macos() {
+	echo "MacOS VM creation:"
 	macosvmname
 }
-
 function macosvmname() {
-	macosname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VM Name." \
-		--nocancel --inputbox "Choose name for your MacOS VM (no special characters):" 7 60 --output-fd 1)
+	read -r -p " Choose name for your MacOS VM: " macosname
 	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ]; then
 		macosvmoverwrite_check
 	else
+		echo "Invalid input. No special characters allowed."
 		unset macosname
 		macosvmname
 	fi
@@ -668,16 +731,21 @@ function macosvmname() {
 
 function macosvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${macosname}.sh ] > /dev/null 2>&1; then
-		dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VM Overwrite." \
-		--yesno "VM named \"${macosname}\" already exist.\n Overwrite \"${macosname}\" VM (this will delete VHD with the same name as well)?" 7 60
-		askmcsovrw=$?
+		echo "VM named \"${macosname}\" already exist."
+		read -r -p "Overwrite \"${macosname}\" VM (this will delete VHD with the same name as well)? " askmcsovrw
 		case $askmcsovrw in
-		0)
+		[yY][eE][sS]|[yY])
+			unset askmcsovrw
 			macosvhdsize
 			;;
-		1)
+		[nN][oO]|[nN])
+			unset askmcsovrw
 			macosvmname
+			;;
+		*)
+			echo "Invalid input..."
+			unset askmcsovrw
+			macosvmoverwrite_check
 			;;
 		esac
 	else
@@ -686,11 +754,9 @@ function macosvmoverwrite_check() {
 }
 
 function macosvhdsize() {
-	macvhdsize=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "VHD Size." \
-		--nocancel --inputbox "Choose your \"${macosname}\" VHD size (in GB, numeric only):" 7 60 --output-fd 1)
+	read -r -p " Choose your VHD size (in GB, numeric only): " macvhdsize
 	if [ -z "${macvhdsize//[0-9]}" ] && [ -n "$macvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
+		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macosname}'.qcow2'
 		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macosname}'.img'
 		sudo -u $(logname) sed -i -e '/^## '${macosname}'/c\' ${CONFIG_LOC}
@@ -700,6 +766,7 @@ function macosvhdsize() {
 		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
+		echo "Invalid input, use only numerics."
 		unset macvhdsize
 		macosvhdsize
 	fi
@@ -713,30 +780,33 @@ function create_macospt() {
 }
 
 function askgpu_macospt_pt() {
-	askgpupt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "GPU Passthrough choice." \
-		--nocancel \
-		--menu "Choose device to pass:" 11 60 4 \
-		"1. Standard"        "- no VBIOS, no workarounds" \
-		"2. AMD"             "- workaround for Windows driver bug" \
-		"3. GPU VBIOS"       "- needs manual extraction and editing in case of nvidia" \
-		"4. GPU VBIOS AMD"   "- for AMD GPUs that need Windows bug workaround, needs manual extraction" 3>&1 1>&2 2>&3)
+	echo "GPU Passthrough choice."
+	echo "	1) Default (no VBIOS, works for some GPUs)"
+	echo "	2) AMD (no VBIOS, workaround for Windows driver bug)"
+	echo "	3) GPU VBIOS append (needs manual extraction and editing in case of nvidia)"
+	echo "	4) GPU VBIOS append (for AMD GPUs that need Windows bug workaround, needs manual extraction)"
+	until [[ $askgpupt =~ ^[1-4]$ ]]; do
+		read -r -p "Choose device to pass [1-4]: " -e -i 1 askgpupt
+	done
 	case $askgpupt in
-	"1. Standard")
+	1)
 		unset askgpupt
 		;;
-	"2. AMD")
+	2)
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
 		;;
-	"3. GPU VBIOS")
+	3)
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
 		;;
-	"4. GPU VBIOS AMD")
+	4)
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		unset askgpupt
 		;;
 	esac
 }
@@ -749,73 +819,73 @@ function create_macosqxl() {
 }
 
 function macos_optset() {
+	echo "Set macOS number of CPU cores and RAM amount:"
 	macos_cores
 	macos_ram
 }
 
 function macos_cores() {
-	mcoscoresnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Set VM Cores." \
-		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
+	read -r -p " Set VM number of cores (numeric only): " mcoscoresnpt
 	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
+		echo "Invalid input. Numerics only."
 		unset mcoscoresnpt
 		macos_cores
 	fi
 }
 
 function macos_ram() {
-	mcosramnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Set VM RAM." \
-		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
+	read -r -p " Set VM RAM amount (in GB, numeric only): " mcosramnpt
 	if [ -z "${mcosramnpt//[0-9]}" ] && [ -n "$mcosramnpt" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
+		echo "Invalid input. Numerics only."
 		unset mcosramnpt
 		macos_ram
 	fi
 }
 
 function download_macos() {
-	macos_choice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "macOS-Simple-KVM script by Foxlet" \
-		--nocancel \
-		--menu "Choose macOS base:" 11 60 4 \
-		"1. macOS 10.15"     "- Catalina" \
-		"2. macOS 10.14"     "- Mojave" \
-		"3. macOS 10.13"     "- High Sierra" \
-		"4. Skip"            "- Base image already downloaded from options above" 3>&1 1>&2 2>&3)
+	echo "This will download MacOS using macOS-Simple-KVM script by Foxlet"
+	echo " Choose macOS base:"
+	echo "	1) 10.15 Catalina"
+	echo "	2) 10.14 Mojave"
+	echo "	3) 10.13 High Sierra"
+	echo "	4) Base image already downloaded (from one of the options above)"
+	until [[ $macos_choice =~ ^[1-4]$ ]]; do
+		read -r -p " VM type choice [1-4]: " macos_choice
+	done
 	case $macos_choice in
-	"1. macOS 10.15")
-		(sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading macOS, this may take a while, please wait..." 12 60
+	1)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --catalina && cd ..
 		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
 		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
 		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
-	"2. macOS 10.14")
-		(sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading macOS, this may take a while, please wait..." 12 60
+	2)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --mojave && cd ..
 		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
 		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
 		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
-	"3. macOS 10.13")
-		(sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading macOS, this may take a while, please wait..." 12 60
+	3)
+		sudo -u $(logname) git clone https://github.com/foxlet/macOS-Simple-KVM.git && cd macOS-Simple-KVM && sudo -u $(logname) ./jumpstart.sh --high-sierra && cd ..
 		sudo -u $(logname) mv -f macOS-Simple-KVM/BaseSystem.img ${IMAGES_DIR}/iso/${macosname}.img
 		sudo -u $(logname) mv -f macOS-Simple-KVM/ESP.qcow2 ${IMAGES_DIR}/macos/
 		sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos/firmware
 		sudo -u $(logname) cp -rf macOS-Simple-KVM/firmware/* ${IMAGES_DIR}/macos/firmware/
 		rm -rf macOS-Simple-KVM
 		;;
-	"4. Skip")
+	4)
 		unset macos_choice
 		;;
 	esac
@@ -823,55 +893,63 @@ function download_macos() {
 
 function check_virtio_win() {
 	if [ -f ${IMAGES_DIR}/iso/virtio-win.iso ] > /dev/null 2>&1; then
-		wait
+		echo "Virto Windows drivers are already downloaded."
 	else
 		download_virtio
 	fi
 }
 
 function download_virtio() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "Windows Virtio Drivers." \
-		--yesno "Download virtio drivers for Windows guests (usually required)?" 6 60
-	askvirtio=$?
+	read -r -p " Do you want to download virtio drivers for Windows guests (usually required)? [Y/n] (default: Yes) " -e -i y askvirtio
 	case $askvirtio in
-	0)
-		(sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading Windows VIrtio Drivers, please wait..." 12 60
+	[yY][eE][sS]|[yY])
+		sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		;;
-	1)
+	[nN][oO]|[nN])
 		unset askvirtio
+		;;
+	*)
+		echo "Invalid input..."
+		unset askvirtio
+		download_virtio
 		;;
 	esac
 	inject_virtio_windows	
 }
 
 function inject_virtio_windows() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "Windows Virtio Drivers." \
-		--yesno "Add virtio Windows drivers .iso to the VM (needed for Windows guests)?" 6 60
-	injectvirtio=$?
+	read -r -p " Do you want to add virtio Windows drivers .iso to the VM (needed for Windows guests)? [Y/n] " injectvirtio
 	case $injectvirtio in
-	0)
+	[yY][eE][sS]|[yY])
 		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		;;
-	1)
+		echo "Virtio Windows drivers .iso added to the VM."
 		unset injectvirtio
+		;;
+	[nN][oO]|[nN])
+		unset injectvirtio
+		;;
+	*)
+		echo "Invalid input..."
+		unset injectvirtio
+		inject_virtio_windows
 		;;
 	esac
 }
 
 function another_os() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "VM Creation." \
-		--yesno "Start auto configuration for another OS?" 5 60
-	askanotheros=$?
+	read -r -p " Do you want to start auto configuration for another OS? [Y/n] (default: No) " -e -i n askanotheros
 	case $askanotheros in
-	0)
+	[yY][eE][sS]|[yY])
 		vm_choice
 		;;
-	1)
-		clear
+	[nN][oO]|[nN])
+		unset askanotheros
+		;;
+	*)
+		echo "Invalid input..."
+		unset askanotheros
+		another_os
 		;;
 	esac
 }
@@ -888,25 +966,29 @@ Name=${cstvmname} VM
 Exec=xterm -e ${cstvmname}-vm
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
-	echo -e "Created \"${cstvmname}\" VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu."
+	echo -e "\033[1;36mCreated \"${cstvmname}\" VM startup script, you can run the vm by typing \"${cstvmname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function scnopt_custom() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "Shortcut Creation." \
-		--yesno "Do you want to create \"${cstvmname}\" shortcut?" 5 60
-	asknoptshort=$?
+	read -r -p " Do you want to create \"${cstvmname}\" shortcut? [Y/n] (default: Yes) " -e -i y asknoptshort
 	case $asknoptshort in
-	0)
+	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${cstvmname} VM
 Exec=${SCRIPTS_DIR}/${cstvmname}.sh
 Icon=${ICONS_DIR}/television.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
-		;;
-	1)
 		unset asknoptshort
+		echo "VM \"${cstvmname}\" shortcut created."
+		;;
+	[nN][oO]|[nN])
+		unset asknoptshort
+		;;
+	*)
+		echo "Invalid input..."
+		unset asknoptshort
+		scnopt_custom
 		;;
 	esac	
 }
@@ -920,16 +1002,13 @@ Name=${macosname} VM
 Exec=xterm -e ${macosname}-vm
 Icon=${ICONS_DIR}/apple.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
-	echo -e "Created \"${macosname}\" VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu."
+	echo -e "\033[1;36mCreated \"${macosname}\" VM startup script, you can run the vm by typing \"${macosname}-vm\" in terminal or choosing from applications menu.\033[0m"
 }
 
 function shortcut_macosqxl() {
-	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title "Shortcut Creation." \
-		--yesno "Do you want to create \"${macosname}\" shortcut?" 5 60
-	askmcoshort=$?
+	read -r -p " Do you want to create \"${macosname}\" shortcut? [Y/n] (default: Yes) " -e -i y askmcoshort
 	case $askmcoshort in
-	0)
+	[yY][eE][sS]|[yY])
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${macosname} VM
@@ -937,9 +1016,15 @@ Exec=${SCRIPTS_DIR}/${macosname}.sh
 Icon=${ICONS_DIR}/apple.svg
 Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desktop
 		unset askmcoshort
+		echo "VM \"${macosname}\" shortcut created."
 		;;
-	1)
+	[nN][oO]|[nN])
 		unset askmcoshort
+		;;
+	*)
+		echo "Invalid input..."
+		unset askmcoshort
+		shortcut_macosqxl
 		;;
 	esac	
 }
@@ -948,13 +1033,16 @@ Type=Application" > /home/$(logname)/.local/share/applications/${macosname}.desk
 ## Remove VM
 
 function remove_vm() {
-	(echo "Use SPACE to select and ARROW keys to navigate!") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 7 60
-	rmvmslct=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Remove Virtual Machine." --stdout \
-		--nocancel --title "Select VM for removal:" --fselect ${SCRIPTS_DIR}/ 20 60)
-	filename=$(basename -- "$rmvmslct")
-	rmvmname="${filename%.*}"
-	if [ -z "${rmvmname//[a-zA-Z0-9_]}" ] && [ -n "$rmvmname" ]; then
+	echo " Remove Virtual Machine."
+	echo " Available Virtual Machines:"
+	ls -1 -I "bps" -I "extract-vbios-linux.sh" -I "extract-vbios-nvflash.sh" -I "iommu.sh" -I "iommu.sh" -I "config" ${SCRIPTS_DIR} | sed -e 's/\.sh$//' | sed -e 's/^/  /'
+	read -r -p " Enter VM name: " rmvmname
+	echo "Will be removed (shortcuts and startup scripts will be removed as well):"
+	echo " VM: ${rmvmname}.sh"
+	echo " VHD: ${rmvmname}.qcow2"
+		read -r -p " Remove \"${rmvmname}\" VM? [Y/n] (default: Yes) " -e -i y rmvminput
+	case $rmvminput in
+	[yY][eE][sS]|[yY])
 		rm ${SCRIPTS_DIR}/${rmvmname}.sh
 		rm ${IMAGES_DIR}/${rmvmname}.qcow2
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
@@ -964,10 +1052,18 @@ function remove_vm() {
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
-		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
-	else
+		echo "VM \"${rmvmname}\" removed."
+		;;
+	[nN][oO]|[nN])
+		unset rmvminput
+		vm_choice
+		;;
+	*)
+		echo "Invalid input, please answer with Yes or No."
+		unset rmvminput
 		remove_vm
-	fi
+		;;
+	esac
 }
 
 ##***************************************************************************************************************************
@@ -1000,22 +1096,22 @@ USB4VID=""
 USB4PID=""
 
 function reminder() {
-	echo -e "Everything is Done."
-	echo -e "VBIOS: You must extract, edit and load VBIOS for VM. \nInfo at:\n https://gitlab.com/YuriAlek/vfio/-/wikis/vbios ."
-	echo -e "Read relevant information on YuriAlek's page at:\n https://gitlab.com/YuriAlek/vfio \nor in \"docs\" directory."
+	echo "Everything is Done."
+	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios .\033[0m"
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in \"docs\" directory.\033[0m"
 }
 
 function remindernpt() {
-	echo -e "Everything is Done."
-	echo -e "Read relevant information on YuriAlek's page at:\n https://gitlab.com/YuriAlek/vfio \nor in \"docs\" directory."
+	echo "Everything is Done."
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in \"docs\" directory.\033[0m"
 }
 
 function remindernopkgm() {
-	echo -e "Everything is Done."
-	echo -e "VBIOS: You must extract, edit and load VBIOS for VM. \nInfo at:\nhttps://gitlab.com/YuriAlek/vfio/-/wikis/vbios ."
-	echo -e "WARNING: You must install packages equivalent to Arch\n\"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages."
-	echo -e "WARNING: You must enable IOMMU for your CPU in distribution boot manager."
-	echo -e "Read relevant information on YuriAlek's page at:\n https://gitlab.com/YuriAlek/vfio \nor in \"docs\" directory."
+	echo "Everything is Done."
+	echo -e "\033[1;31mNVIDIA: You must extract, edit and load VBIOS for VM, info https://gitlab.com/YuriAlek/vfio/-/wikis/vbios S\033[0m"
+	echo -e "\033[1;31mWARNING: You must install packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl xterm\" packages.\033[0m"
+	echo -e "\033[1;31mWARNING: You must enable IOMMU for your CPU in distribution boot manager.\033[0m"
+	echo -e "\033[1;36mRead relevant information on YuriAlek's page at https://gitlab.com/YuriAlek/vfio , or in \"docs\" directory.\033[0m"
 }
 
 function chk_create() {
