@@ -960,6 +960,7 @@ function another_os() {
 		;;
 	1)
 		unset askanotheros
+		clear
 		;;
 	esac
 }
