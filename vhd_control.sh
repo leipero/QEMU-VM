@@ -42,7 +42,7 @@ function vhdmount() {
 	vhdname=$(dialog  --backtitle "VHD Control Script" \
 		--title     "VHD Selection." --stdout \
 		--nocancel --title "Select VHD file:" --fselect ${IMAGES_DIR}/ 20 60)
-	qemu-nbd --nocache --aio=threads --connect=/dev/nbd0 ${vhdname}
+	qemu-nbd --nocache --aio=native --connect=/dev/nbd0 ${vhdname}
 	wait
 	part_select
 	if [ -z "${pn//[1-8]}" ] && [ -n "$pn" ]; then

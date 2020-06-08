@@ -26,24 +26,24 @@ function checkos_install() {
 		install_dep_apt
 		populate_ovmf
 		addgroups
-		enable_earlykms_apt
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		enable_earlykms_apt) | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v yum > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_yum
 		populate_ovmf
-		addgroups
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v zypper > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_zypper
 		populate_ovmf
-		addgroups
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	elif command -v pacman > /dev/null 2>&1; then
@@ -51,8 +51,8 @@ function checkos_install() {
 		install_dep_pacman
 		populate_ovmf
 		addgroups
-		enable_earlykms_pacman
-		setup_bootloader) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		enable_earlykms_pacman) | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "System configuration..." 12 60
+		setup_bootloader
 		vm_choice
 		chk_create
 	else
@@ -91,8 +91,8 @@ function continue_script() {
 	case $askconts in
 	0)
 	    	(populate_base_config
-	    	addgroups
-		check_iommu) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+	    	addgroups) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		check_iommu
 		vm_choice
 		chk_create
 		remindernopkgm | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 14 60
@@ -206,17 +206,16 @@ function enable_earlykms_pacman() {
 
 function setup_bootloader() {
 	check_iommu
-	set_cpu_iommu
-	find_grub
+	(set_cpu_iommu
+	find_grub) | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
 }
 
 function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
-		echo "AMD's IOMMU / Intel's VT-D is enabled in the BIOS/UEFI."
 		populate_iommu
 	else
-		echo "AMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it."
-		echo "NOTE: You can still use VMs with Virtio paravirtualization offering excellent performance."
+		(echo "AMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it."
+		echo "NOTE: You can still use VMs with Virtio paravirtualization offering excellent performance.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
 		vm_choice
 		chk_create
 		exit 1
@@ -255,7 +254,7 @@ function enable_iommu_grub() {
 		sed -i -e "s/iommu=pt//g" /etc/default/grub
 		sed -i -e "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${IOMMU_CPU}_iommu=on iommu=pt /g" /etc/default/grub
 		grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
-		echo "IOMMU enabled GRUB configuration file generated."
+		echo "IOMMU enabled GRUB configuration file generated. Reboot your PC before you run VM."
 	fi
 }
 
@@ -265,7 +264,7 @@ function enable_iommu_systemdb() {
 	else
 		sed -i -e "s/iommu=pt//g" ${SDBP}
 		sed -i -e "/options/s/$/ ${IOMMU_CPU}_iommu=on iommu=pt/" ${SDBP}
-		echo "IOMMU line added to the Systemd-boot configuration file(s)."
+		echo "IOMMU line added to the Systemd-boot configuration file(s). Reboot your PC before you run VM."
 	fi
 }
 
@@ -332,33 +331,122 @@ function populate_ovmf() {
 function populate_iommu() {
 	## Get IOMMU groups
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
-	IOMMU_GPU_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/^[ \t]*//' | head -c 7)"
-	IOMMU_GPU_AUDIO_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDMI" | sed -e 's/^[ \t]*//' | head -c 7)"
-	IOMMU_PCI_AUDIO_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
-	## Get PCI BUS IDs
-	videoid_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "VGA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	audioid_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDMI" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	pciaudioid_GET="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	## Get Virsh devices names
-	VIRSH_GPU_GET="${IOMMU_GPU_GET//:/_}"
-	VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
-	VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO_GET//:/_}"
-	VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
-	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO_GET//:/_}"
+	#GPU NAMES
+	GPU1NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU2NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU3NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU4NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	#IOMMU_GPU_GET
+	IOMMU_GPU1="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU2="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU3="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU4="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/^[ \t]*//' | head -c 6)"
+	#IOMMU_GPU_AUDIO_GET
+	IOMMU_A_GPU1="$([ -z "$IOMMU_GPU1" ] && echo "" || echo "${IOMMU_GPU1}1")"
+	IOMMU_A_GPU2="$([ -z "$IOMMU_GPU2" ] && echo "" || echo "${IOMMU_GPU2}1")"
+	IOMMU_A_GPU3="$([ -z "$IOMMU_GPU3" ] && echo "" || echo "${IOMMU_GPU3}1")"
+	IOMMU_A_GPU4="$([ -z "$IOMMU_GPU4" ] && echo "" || echo "${IOMMU_GPU4}1")"
+	#GPU_VIDEO_ID_GET
+	VID_GPU1="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU2="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU3="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU4="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	#GPU_AUDIO_ID_GET
+	AID_GPU1="$([ -z "${IOMMU_A_GPU1}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU1}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU2="$([ -z "${IOMMU_A_GPU2}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU2}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU3="$([ -z "${IOMMU_A_GPU3}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU3}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU4="$([ -z "${IOMMU_A_GPU4}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU4}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	## Get PCI_AUDIO
+	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
+	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
 	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
+	## GPU COUNT CHECK
+	gpucount_check
 	## Populate config IOMMU groups
-	sudo -u $(logname) sed -i -e '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO}'"' ${CONFIG_LOC}
 	## Populate config PCI BUS IDs
-	sudo -u $(logname) sed -i -e '/^videoid=/c\videoid="'${videoid_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^audioid=/c\audioid="'${audioid_GET}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^pciaudioid=/c\pciaudioid="'${pciaudioid_GET}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^videoid=/c\videoid="'${GPU_VIDEO_ID}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^audioid=/c\audioid="'${GPU_AUDIO_ID}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^pciaudioid=/c\pciaudioid="'${PCI_AUDIO_ID}'"' ${CONFIG_LOC}
 	## Populate config Virsh devices
 	sudo -u $(logname) sed -i -e '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
-	echo "Config file populated with IOMMU settings."
+}
+
+function gpucount_check() {
+	[ -z "$IOMMU_GPU2" ] && gpu_check || multi_gpu
+}
+
+function gpu_check() {
+	[ -z "$IOMMU_GPU1" ] && echo "No IOMMU GPU found." || single_gpu
+}
+
+function single_gpu() {
+	IOMMU_GPU="${IOMMU_GPU1}0"
+	IOMMU_GPU_AUDIO="${IOMMU_A_GPU1}"
+	GPU_VIDEO_ID="${VID_GPU1}"
+	GPU_AUDIO_ID="${AID_GPU1}"
+	VIRSH_GPU_GET="${IOMMU_GPU//:/_}"
+	VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
+	VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO//:/_}"
+	VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
+}
+
+function multi_gpu() {
+	gpupt_choice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title     "GPU Passthrough choice." \
+		--nocancel \
+		--menu "Choose GPU to pass to the config:" 11 80 4 \
+		"1." "${GPU1NM}" \
+		"2." "${GPU2NM}" \
+		"3." "${GPU3NM}" \
+		"4." "${GPU4NM}" 3>&1 1>&2 2>&3)
+	case $gpupt_choice in
+	"1.")
+		IOMMU_GPU="${IOMMU_GPU1}0"
+		IOMMU_GPU_AUDIO="${IOMMU_A_GPU1}"
+		GPU_VIDEO_ID="${VID_GPU1}"
+		GPU_AUDIO_ID="${AID_GPU1}"
+		VIRSH_GPU_GET="${IOMMU_GPU//:/_}"
+		VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
+		VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO//:/_}"
+		VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
+		;;
+	"2.")
+		IOMMU_GPU="${IOMMU_GPU2}0"
+		IOMMU_GPU_AUDIO="${IOMMU_A_GPU2}"
+		GPU_VIDEO_ID="${VID_GPU2}"
+		GPU_AUDIO_ID="${AID_GPU2}"
+		VIRSH_GPU_GET="${IOMMU_GPU//:/_}"
+		VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
+		VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO//:/_}"
+		VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
+		;;
+	"3.")
+		IOMMU_GPU="${IOMMU_GPU3}0"
+		IOMMU_GPU_AUDIO="${IOMMU_A_GPU3}"
+		GPU_VIDEO_ID="${VID_GPU3}"
+		GPU_AUDIO_ID="${AID_GPU3}"
+		VIRSH_GPU_GET="${IOMMU_GPU//:/_}"
+		VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
+		VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO//:/_}"
+		VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
+		;;
+	"4.")
+		IOMMU_GPU="${IOMMU_GPU4}0"
+		IOMMU_GPU_AUDIO="${IOMMU_A_GPU4}"
+		GPU_VIDEO_ID="${VID_GPU4}"
+		GPU_AUDIO_ID="${AID_GPU4}"
+		VIRSH_GPU_GET="${IOMMU_GPU//:/_}"
+		VIRSH_GPU_NAME="pci_0000_${VIRSH_GPU_GET//./_}"
+		VIRSH_GPU_AUDIO_GET="${IOMMU_GPU_AUDIO//:/_}"
+		VIRSH_GPU_AUDIO_NAME="pci_0000_${VIRSH_GPU_AUDIO_GET//./_}"
+		;;
+	esac
 }
 
 ##***************************************************************************************************************************
@@ -836,7 +924,7 @@ function download_virtio() {
 	askvirtio=$?
 	case $askvirtio in
 	0)
-		(sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading Windows VIrtio Drivers, please wait..." 12 60
+		(sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading Windows Virtio Drivers, please wait..." 12 60
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		;;
 	1)
@@ -871,7 +959,7 @@ function another_os() {
 		vm_choice
 		;;
 	1)
-		clear
+		unset askanotheros
 		;;
 	esac
 }
