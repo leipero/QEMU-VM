@@ -1032,15 +1032,30 @@ function download_virtio() {
 	0)
 		(sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso) 2>&1 | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "Downloading Windows Virtio Drivers, please wait..." 12 60
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
+		inject_virtio_windows_dl
 		;;
 	1)
 		unset askvirtio
 		;;
 	esac
-	inject_virtio_windows	
 }
 
 function inject_virtio_windows() {
+	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title "Windows Virtio Drivers." \
+		--defaultno --yesno "Add virtio Windows drivers .iso to the VM (needed for Windows guests)?" 6 60
+	injectvirtio=$?
+	case $injectvirtio in
+	0)
+		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	1)
+		unset injectvirtio
+		;;
+	esac
+}
+
+function inject_virtio_windows_dl() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title "Windows Virtio Drivers." \
 		--yesno "Add virtio Windows drivers .iso to the VM (needed for Windows guests)?" 6 60
