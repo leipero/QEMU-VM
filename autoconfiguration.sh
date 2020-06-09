@@ -86,7 +86,7 @@ function notfirstrun() {
 function continue_script() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Continue Setup." \
-		--yesno "You must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue. \n Continue?" 7 60
+		--defaultno --yesno "You must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue. \n Continue?" 7 60
 	askconts=$?
 	case $askconts in
 	0)
@@ -528,7 +528,7 @@ function customvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
 		dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Overwrite." \
-		--yesno "VM named \"${cstvmname}\" already exist.\n Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)?" 7 60
+		--defaultno --yesno "VM named \"${cstvmname}\" already exist.\n Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)?" 7 60
 		askcstovrw=$?
 		case $askcstovrw in
 		0)
@@ -777,7 +777,7 @@ function hugepages_set() {
 function legacy_bios() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title "BIOS/UEFI VM Settings." \
-		--yesno "Enable legacy BIOS?" 5 60
+		--defaultno --yesno "Enable legacy BIOS?" 5 60
 	lgbios=$?
 	case $lgbios in
 	0)
@@ -809,7 +809,7 @@ function macosvmoverwrite_check() {
 	if [ -f ${SCRIPTS_DIR}/${macosname}.sh ] > /dev/null 2>&1; then
 		dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Overwrite." \
-		--yesno "VM named \"${macosname}\" already exist.\n Overwrite \"${macosname}\" VM (this will delete VHD with the same name as well)?" 7 60
+		--defaultno --yesno "VM named \"${macosname}\" already exist.\n Overwrite \"${macosname}\" VM (this will delete VHD with the same name as well)?" 7 60
 		askmcsovrw=$?
 		case $askmcsovrw in
 		0)
@@ -1026,7 +1026,7 @@ function check_virtio_win() {
 function download_virtio() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title "Windows Virtio Drivers." \
-		--yesno "Download virtio drivers for Windows guests (usually required)?" 6 60
+		--defaultno --yesno "Download virtio drivers for Windows guests (usually required)?" 6 60
 	askvirtio=$?
 	case $askvirtio in
 	0)
@@ -1058,7 +1058,7 @@ function inject_virtio_windows() {
 function another_os() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title "VM Creation." \
-		--yesno "Start auto configuration for another OS?" 5 60
+		--defaultno --yesno "Start auto configuration for another OS?" 5 60
 	askanotheros=$?
 	case $askanotheros in
 	0)
