@@ -298,13 +298,6 @@ function populate_base_config() {
 	## Populate config paths
 	sudo -u $(logname) sed -i -e '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^IMAGES=/c\IMAGES='${SCRIPT_DIR}'/images' ${CONFIG_LOC}
-	## Set number of cores in the config file
-	sudo -u $(logname) sed -i -e '/^CORES=/c\CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^MACOS_CORES=/c\MACOS_CORES='${CORES_NUM_GET}'' ${CONFIG_LOC}
-	## Set VM RAM size based on free memory
-	sudo -u $(logname) sed -i -e '/^RAM=/c\RAM='${RAMFF}'G' ${CONFIG_LOC}
-	## Set VM hugepages size based on VM RAM
-	sudo -u $(logname) sed -i -e '/^HUGEPAGES=/c\HUGEPAGES='${HPG}'' ${CONFIG_LOC}
 	check_dm
 	sudo -u $(logname) sed -i -e '/^DSPMGR=/c\DSPMGR='${DMNGR}'' ${CONFIG_LOC}
 	## Set input devices settings in config file
@@ -329,8 +322,29 @@ function populate_ovmf() {
 }
 
 function populate_iommu() {
-	## Get IOMMU groups
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
+	## Get PCI_AUDIO
+	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
+	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
+	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
+	## GPU COUNT CHECK
+	gpucount_check
+	## Populate config IOMMU groups
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO}'"' ${CONFIG_LOC}
+	## Populate config PCI BUS IDs
+	sudo -u $(logname) sed -i -e '/^videoid=/c\videoid="'${GPU_VIDEO_ID}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^audioid=/c\audioid="'${GPU_AUDIO_ID}'"' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^pciaudioid=/c\pciaudioid="'${PCI_AUDIO_ID}'"' ${CONFIG_LOC}
+	## Populate config Virsh devices
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
+}
+
+function iommu_gpu_popget() {
 	#GPU NAMES
 	GPU1NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | cut -d ':' -f3 | sed 's/.\{5\}$//')
 	GPU2NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | cut -d ':' -f3 | sed 's/.\{5\}$//')
@@ -356,33 +370,11 @@ function populate_iommu() {
 	AID_GPU2="$([ -z "${IOMMU_A_GPU2}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU2}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
 	AID_GPU3="$([ -z "${IOMMU_A_GPU3}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU3}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
 	AID_GPU4="$([ -z "${IOMMU_A_GPU4}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU4}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	## Get PCI_AUDIO
-	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
-	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
-	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
-	## GPU COUNT CHECK
-	gpucount_check
-	## Populate config IOMMU groups
-	sudo -u $(logname) sed -i -e '/^IOMMU_GPU=/c\IOMMU_GPU="'${IOMMU_GPU}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_AUDIO=/c\IOMMU_GPU_AUDIO="'${IOMMU_GPU_AUDIO}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^IOMMU_PCI_AUDIO=/c\IOMMU_PCI_AUDIO="'${IOMMU_PCI_AUDIO}'"' ${CONFIG_LOC}
-	## Populate config PCI BUS IDs
-	sudo -u $(logname) sed -i -e '/^videoid=/c\videoid="'${GPU_VIDEO_ID}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^audioid=/c\audioid="'${GPU_AUDIO_ID}'"' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^pciaudioid=/c\pciaudioid="'${PCI_AUDIO_ID}'"' ${CONFIG_LOC}
-	## Populate config Virsh devices
-	sudo -u $(logname) sed -i -e '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
-	sudo -u $(logname) sed -i -e '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
 }
 
 function gpucount_check() {
-	[ -z "$IOMMU_GPU2" ] && gpu_check || multi_gpu
-}
-
-function gpu_check() {
-	[ -z "$IOMMU_GPU1" ] && echo "No IOMMU GPU found." || single_gpu
+	iommu_gpu_popget
+	[ -z "$IOMMU_GPU2" ] && single_gpu || multi_gpu
 }
 
 function single_gpu() {
@@ -469,7 +461,9 @@ function vm_choice() {
 		create_pt
 		io_uring
 		legacy_bios
-		askgpu_custom_pt
+		gpu_method_pt
+		gpucount_check_pt
+		custom_optset_pt
 		startupsc_custom
 		reminder | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 13 60
 		another_os
@@ -487,7 +481,9 @@ function vm_choice() {
 	"3. macOS PT")
 		create_macos
 		create_macospt
-		askgpu_macospt_pt
+		gpu_method_mos_pt
+		gpucount_check_mos_pt
+		macos_optset_pt
 		download_macos
 		startupsc_macos
 		reminder | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Reminder." 13 60
@@ -554,9 +550,9 @@ function customvhdsize() {
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
-		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'_VM/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo -e "\n## ${cstvmname}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo -e "\n## ${cstvmname}_VM" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo ${IMGVMSET} >> ${CONFIG_LOC}
 	else
 		unset cstvhdsize
@@ -583,7 +579,7 @@ function customvm_iso() {
 }
 
 function create_pt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
@@ -604,18 +600,18 @@ function io_uring() {
 	esac
 }
 
-function askgpu_custom_pt() {
+function gpu_method_pt() {
 	vgpuchoice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "GPU Passthrough choice." \
+		--title     "GPU Passthrough method choice." \
 		--nocancel \
-		--menu "Choose device to pass:" 11 60 4 \
+		--menu "Choose method to pass your device:" 11 60 4 \
 		"1. Standard"        "- no VBIOS, no workarounds" \
 		"2. AMD"             "- workaround for Windows driver bug" \
 		"3. GPU VBIOS"       "- needs manual extraction and editing in case of nvidia" \
 		"4. GPU VBIOS AMD"   "- for AMD GPUs that need Windows bug workaround, needs manual extraction" 3>&1 1>&2 2>&3)
-	case $vgpuchoice in
+	case $gpumchoice in
 	"1. Standard")
-		unset vgpuchoice
+		unset gpumchoice
 		;;
 	"2. AMD")
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
@@ -631,6 +627,34 @@ function askgpu_custom_pt() {
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	esac
+}
+
+function gpucount_check_pt() {
+	iommu_gpu_popget
+	if [ -z "$IOMMU_GPU2" ];
+	then
+		wait
+	else
+		multi_gpu
+		custom_gpu
+	fi
+}
+
+function custom_gpu() {
+	## Remove previous VM config (if any)
+	sudo -u $(logname) sed -i -e '/^## IOMMU_'${cstvmname}'_VM/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${cstvmname}'/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${cstvmname}'/c\' ${CONFIG_LOC}
+	## Populate VM config IOMMU groups
+	sudo -u $(logname) echo -e "## IOMMU_${cstvmname}_VM" >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'IOMMU_GPU_'${cstvmname}'="'${IOMMU_GPU}'"' >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'IOMMU_GPU_'${cstvmname}'_AUDIO="'${IOMMU_GPU_AUDIO}'"' >> ${CONFIG_LOC}
+	## Populate VM config Virsh devices
+	sudo -u $(logname) echo -e 'VIRSH_GPU_'${cstvmname}'="'${VIRSH_GPU_NAME}'"' >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'VIRSH_GPU_'${cstvmname}'_AUDIO="'${VIRSH_GPU_AUDIO_NAME}'"' >> ${CONFIG_LOC}
+	## Change VM script IOMMU settings
+	sudo -u $(logname) sed -i -e 's/$VIRSH_GPU/$VIRSH_GPU_'${cstvmname}'/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+	sudo -u $(logname) sed -i -e 's/$IOMMU_GPU/$IOMMU_GPU_'${cstvmname}'/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 }
 
 function custom_vgpu() {
@@ -659,7 +683,7 @@ function custom_vgpu() {
 }
 
 function create_qxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
@@ -668,7 +692,7 @@ function create_qxl() {
 
 
 function create_virtio() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
@@ -676,14 +700,14 @@ function create_virtio() {
 }
 
 function create_virgl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
 }
 
 function create_std() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/vm_bp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
 	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
@@ -695,32 +719,58 @@ function custom_optset() {
 	custom_ram
 }
 
+function custom_optset_pt() {
+	custom_cores
+	custom_ram
+	hugepages_set
+}
+
 function custom_cores() {
-	cstmcoresnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+	cstmcores=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
 		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${cstmcoresnpt//[0-9]}" ] && [ -n "$cstmcoresnpt" ]; then
+	if [ -z "${cstmcores//[0-9]}" ] && [ -n "$cstmcores" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_CORES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcoresnpt}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcores}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
-		unset cstmcoresnpt
+		unset cstmcores
 		custom_cores
 	fi
 }
 
 function custom_ram() {
-	cstmramnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+	cstmram=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM RAM." \
 		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${cstmramnpt//[0-9]}" ] && [ -n "$cstmramnpt" ]; then
+	if [ -z "${cstmram//[0-9]}" ] && [ -n "$cstmram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmramnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
-		unset cstmramnpt
+		unset cstmram
 		custom_ram
 	fi
+}
+
+function hugepages_set() {
+	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title "HUGEPAGES Settings." \
+		--yesno "Enable HUGEPAGES?" 6 60
+	hpgenable=$?
+	case $hpgenable in
+	0)
+		HPGC="$(( (cstmram * 1050) / 2))"
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_HUGEPAGES=${HPGC}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$HUGEPAGES/$'${cstvmname}'_HUGEPAGES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	1)
+		sudo -u $(logname) sed -i -e 's:^echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's:^echo 0 > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	esac
 }
 
 function legacy_bios() {
@@ -781,10 +831,10 @@ function macosvhdsize() {
 		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${macosname}.qcow2 ${macvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
 		IMGVMSET=''${macosname}'_IMG=$IMAGES/'${macosname}'.qcow2'
 		ISOVMSET=''${macosname}'_ISO=$IMAGES/iso/'${macosname}'.img'
-		sudo -u $(logname) sed -i -e '/^## '${macosname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## '${macosname}'_VM/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_ISO=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo -e "\n## ${macosname}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo -e "\n## ${macosname}_VM" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $IMGVMSET >> ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
@@ -794,13 +844,13 @@ function macosvhdsize() {
 }
 
 function create_macospt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_pt ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_pt ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
 }
 
-function askgpu_macospt_pt() {
+function gpu_method_mos_pt() {
 	askgpupt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "GPU Passthrough choice." \
 		--nocancel \
@@ -809,9 +859,9 @@ function askgpu_macospt_pt() {
 		"2. AMD"             "- workaround for Windows driver bug" \
 		"3. GPU VBIOS"       "- needs manual extraction and editing in case of nvidia" \
 		"4. GPU VBIOS AMD"   "- for AMD GPUs that need Windows bug workaround, needs manual extraction" 3>&1 1>&2 2>&3)
-	case $askgpupt in
+	case $askgpumpt in
 	"1. Standard")
-		unset askgpupt
+		unset askgpumpt
 		;;
 	"2. AMD")
 		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
@@ -829,8 +879,36 @@ function askgpu_macospt_pt() {
 	esac
 }
 
+function gpucount_check_mos_pt() {
+	iommu_gpu_popget
+	if [ -z "$IOMMU_GPU2" ];
+	then
+		wait
+	else
+		multi_gpu
+		macos_gpu
+	fi
+}
+
+function macos_gpu() {
+	## Remove previous VM config (if any)
+	sudo -u $(logname) sed -i -e '/^## IOMMU_'${macosname}'_VM/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${macosname}'/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${macosname}'/c\' ${CONFIG_LOC}
+	## Populate VM config IOMMU groups
+	sudo -u $(logname) echo -e "## IOMMU_${macosname}_VM" >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'IOMMU_GPU_'${macosname}'="'${IOMMU_GPU}'"' >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'IOMMU_GPU_'${macosname}'_AUDIO="'${IOMMU_GPU_AUDIO}'"' >> ${CONFIG_LOC}
+	## Populate VM config Virsh devices
+	sudo -u $(logname) echo -e 'VIRSH_GPU_'${macosname}'="'${VIRSH_GPU_NAME}'"' >> ${CONFIG_LOC}
+	sudo -u $(logname) echo -e 'VIRSH_GPU_'${macosname}'_AUDIO="'${VIRSH_GPU_AUDIO_NAME}'"' >> ${CONFIG_LOC}
+	## Change VM script IOMMU settings
+	sudo -u $(logname) sed -i -e 's/$VIRSH_GPU/$VIRSH_GPU_'${macosname}'/g' ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) sed -i -e 's/$IOMMU_GPU/$IOMMU_GPU_'${macosname}'/g' ${SCRIPTS_DIR}/"${macosname}".sh
+}
+
 function create_macosqxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/bps/mos_bp_qxl ${SCRIPTS_DIR}/"${macosname}".sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_qxl ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${macosname}_IMG/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${macosname}_ISO/g" ${SCRIPTS_DIR}/"${macosname}".sh
 	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${macosname}.sh
@@ -841,32 +919,58 @@ function macos_optset() {
 	macos_ram
 }
 
+function macos_optset_pt() {
+	macos_cores
+	macos_ram
+	macos_hugepages_set
+}
+
 function macos_cores() {
-	mcoscoresnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+	mcoscores=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
 		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${mcoscoresnpt//[0-9]}" ] && [ -n "$mcoscoresnpt" ]; then
+	if [ -z "${mcoscores//[0-9]}" ] && [ -n "$mcoscores" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${macosname}_CORES=${mcoscoresnpt}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_CORES=${mcoscores}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
-		unset mcoscoresnpt
+		unset mcoscores
 		macos_cores
 	fi
 }
 
 function macos_ram() {
-	mcosramnpt=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+	mcosram=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM RAM." \
 		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${mcosramnpt//[0-9]}" ] && [ -n "$mcosramnpt" ]; then
+	if [ -z "${mcosram//[0-9]}" ] && [ -n "$mcosram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_RAM=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${macosname}_RAM=${mcosramnpt}G" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_RAM=${mcosram}G" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
-		unset mcosramnpt
+		unset mcosram
 		macos_ram
 	fi
+}
+
+function macos_hugepages_set() {
+	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title "HUGEPAGES Settings." \
+		--yesno "Enable HUGEPAGES?" 6 60
+	mcoshpgenable=$?
+	case $mcoshpgenable in
+	0)
+		HPGC="$(( (mcosram * 1050) / 2))"
+		sudo -u $(logname) sed -i -e '/^'${macosname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_HUGEPAGES=${HPGC}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$HUGEPAGES/$'${macosname}'_HUGEPAGES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		;;
+	1)
+		sudo -u $(logname) sed -i -e 's:^echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's:^echo 0 > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
+		;;
+	esac
 }
 
 function download_macos() {
@@ -1048,11 +1152,16 @@ function remove_vm() {
 		rm ${IMAGES_DIR}/${rmvmname}.qcow2
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
 		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
-		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'/c\' ${CONFIG_LOC}
+		## Remove previous VM config
+		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'_VM/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC}
 		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
 	else
 		remove_vm
@@ -1068,10 +1177,6 @@ SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 IMAGES_DIR="${SCRIPT_DIR}/images"
 ICONS_DIR="${SCRIPT_DIR}/icons"
 CONFIG_LOC="${SCRIPTS_DIR}/config"
-## Get CPU and Memory information.
-CORES_NUM_GET="$(nproc)"
-RAMFF="$(grep MemAvailable /proc/meminfo | awk '{print int ($2/1024/1024-2)}')"
-HPG="$(( (RAMFF * 1050) / 2))"
 ## Get GPU kernel module information.
 GPU="$(lspci -nnk | grep -i vga -A3 | grep 'in use' | cut -d ':' -f2 | cut -d ' ' -f2)"
 ## Get input devices information

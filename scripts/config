@@ -24,13 +24,6 @@ audiobusid="0000:$IOMMU_GPU_AUDIO"
 pciaudioid=
 pciaudiobusid="0000:$IOMMU_PCI_AUDIO"
 
-## QEMU options
-RAM=
-CORES=
-
-## Hugepages ((RAM * 1050) / 2)
-HUGEPAGES=
-
 ## Display manager
 DSPMGR=
 
