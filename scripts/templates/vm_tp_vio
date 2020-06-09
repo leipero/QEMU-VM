@@ -7,7 +7,7 @@ source "${SCRIPTSDIRS}/config"
 ## QEMU (VM) command
 qemu-system-x86_64 -enable-kvm -M q35 -vga virtio -display sdl,gl=on \
   -m $RAM -cpu host,hypervisor,topoext -rtc clock=host,base=localtime \
-  -smp $CORES,sockets=1,cores=$(( $CORES / 2 )),threads=2 \
+  -smp $SMPS,sockets=1,cores=$CORES,threads=2 \
   -usb -device usb-kbd -device usb-tablet \
   -soundhw all \
   -drive if=pflash,format=raw,readonly,file=$OVMF_CODE \

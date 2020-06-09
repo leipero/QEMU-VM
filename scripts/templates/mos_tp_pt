@@ -43,7 +43,7 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm \
   -nographic -vga none \
   -m $RAM -mem-path /dev/hugepages \
   -machine q35,accel=kvm \
-  -smp $CORES,sockets=1,cores=$(( $CORES / 2 )),threads=2 \
+  -smp $SMPS,sockets=1,cores=$CORES,threads=2 \
   -cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc \
   -device isa-applesmc,osk="$OSK" \
   -smbios type=2 \

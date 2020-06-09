@@ -44,7 +44,7 @@ qemu-system-x86_64 -runas $VM_USER -enable-kvm -M q35 \
   -m $RAM -mem-path /dev/hugepages \
   -cpu host,hypervisor,topoext,kvm=off,hv_relaxed,hv_spinlocks=0x1fff,hv_time,hv_vapic,hv_vendor_id=0xDEADBEEFFF \
   -rtc clock=host,base=localtime \
-  -smp $CORES,sockets=1,cores=$(( $CORES / 2 )),threads=2 \
+  -smp $SMPS,sockets=1,cores=$CORES,threads=2 \
   -device pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1 \
   -device vfio-pci,host=$IOMMU_GPU,bus=port.1,multifunction=on \
   -device vfio-pci,host=$IOMMU_GPU_AUDIO,bus=port.1 \
