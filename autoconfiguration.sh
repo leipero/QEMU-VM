@@ -516,7 +516,7 @@ function customvmname() {
 	cstvmname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Name." \
 		--nocancel --inputbox "Choose name for your VM (no special characters):" 7 60 --output-fd 1)
-	if [ -z "${cstvmname//[a-zA-Z0-9_]}" ] && [ -n "$cstvmname" ]; then
+	if [ -z "${cstvmname//[a-zA-Z0-9_]}" ] && [ -n "$cstvmname" ] && [ -n  "${cstvmname//[0-9]}" ]; then
 		customvmoverwrite_check
 	else
 		unset cstvmname
@@ -715,29 +715,63 @@ function create_std() {
 }
 
 function custom_optset() {
-	custom_cores
+	custom_smp
 	custom_ram
 }
 
 function custom_optset_pt() {
-	custom_cores
+	custom_smp
 	custom_ram
 	hugepages_set
 	echo -e 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 }
 
-function custom_cores() {
-	cstmcores=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+function custom_smp() {
+	sudo -u $(logname) sed -i -e '/^'${cstvmname}'_SMPS=/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^'${cstvmname}'_CORES=/c\' ${CONFIG_LOC}
+	cstmsmp=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
-		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${cstmcores//[0-9]}" ] && [ -n "$cstmcores" ]; then
-		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_CORES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcores}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		--nocancel --inputbox "Set number of SMPs (cores+threads, numeric only):" 7 60 --output-fd 1)
+	if [ -z "${cstmsmp//[0-9]}" ] && [ -n "$cstmsmp" ] && [ $cstmsmp -gt 0 ]; then
+		if [[ $((cstmsmp % 2)) -eq 0 ]]; then
+			
+			custom_cores
+		else
+			sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
+			sudo -u $(logname) echo "${cstvmname}_CORES=${cstmsmp}" >> ${CONFIG_LOC}
+			sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+			sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+			sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		fi
 	else
-		unset cstmcores
-		custom_cores
+		unset cstmsmp
+		custom_smp
 	fi
+}
+
+function custom_cores() {
+	cstmcores="$(( cstmsmp / 2 ))"
+	smt_ht=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title     "Set VM Cores." \
+		--nocancel \
+		--menu "Choose VM Cores Configuration:" 11 60 4 \
+		"1. HT/SMT Enabled" "${cstmcores} core(s), ${cstmsmp} thread(s)" \
+		"2. HT/SMT Disabled" "${cstmsmp} core(s), ${cstmsmp} thread(s)" 3>&1 1>&2 2>&3)
+	case $smt_ht in
+	"1. HT/SMT Enabled")
+		sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcores}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	"2. HT/SMT Disabled")
+		sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmsmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	esac
 }
 
 function custom_ram() {
@@ -797,7 +831,7 @@ function macosvmname() {
 	macosname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Name." \
 		--nocancel --inputbox "Choose name for your MacOS VM (no special characters):" 7 60 --output-fd 1)
-	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ]; then
+	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ] && [ -n  "${cstvmname//[0-9]}" ]; then
 		macosvmoverwrite_check
 	else
 		unset macosname
@@ -916,29 +950,63 @@ function create_macosqxl() {
 }
 
 function macos_optset() {
-	macos_cores
+	macos_smp
 	macos_ram
 }
 
 function macos_optset_pt() {
-	macos_cores
+	macos_smp
 	macos_ram
 	macos_hugepages_set
 	echo -e 'ULIMIT_TARGET=$(( $(echo $'${macosname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 }
 
-function macos_cores() {
-	mcoscores=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+function macos_smp() {
+	sudo -u $(logname) sed -i -e '/^'${macosname}'_SMPS=/c\' ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
+	mcossmp=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
-		--nocancel --inputbox "Set VM number of cores (numeric only):" 7 60 --output-fd 1)
-	if [ -z "${mcoscores//[0-9]}" ] && [ -n "$mcoscores" ]; then
-		sudo -u $(logname) sed -i -e '/^'${macosname}'_CORES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${macosname}_CORES=${mcoscores}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		--nocancel --inputbox "Set number of SMPs (cores+threads, numeric only):" 7 60 --output-fd 1)
+	if [ -z "${mcossmp//[0-9]}" ] && [ -n "$mcossmp" ] && [ $mcossmp -gt 0 ]; then
+		if [[ $((mcossmp % 2)) -eq 0 ]]; then
+			
+			macos_cores
+		else
+			sudo -u $(logname) echo "${macosname}_SMPS=${mcossmp}" >> ${CONFIG_LOC}
+			sudo -u $(logname) echo "${macosname}_CORES=${mcossmp}" >> ${CONFIG_LOC}
+			sudo -u $(logname) sed -i -e 's/$SMPS/$'${macosname}'_SMPS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+			sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+			sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		fi
 	else
-		unset mcoscores
-		macos_cores
+		unset mcossmp
+		macos_smp
 	fi
+}
+
+function macos_cores() {
+	mcoscores="$(( mcossmp / 2 ))"
+	smt_ht=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title     "Set VM Cores." \
+		--nocancel \
+		--menu "Choose VM Cores Configuration:" 11 60 4 \
+		"1. HT/SMT Enabled" "${mcoscores} core(s), ${mcossmp} thread(s)" \
+		"2. HT/SMT Disabled" "${mcossmp} core(s), ${mcossmp} thread(s)" 3>&1 1>&2 2>&3)
+	case $smt_ht in
+	"1. HT/SMT Enabled")
+		sudo -u $(logname) echo "${macosname}_SMPS=${mcossmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_CORES=${mcoscores}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$SMPS/$'${macosname}'_SMPS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		;;
+	"2. HT/SMT Disabled")
+		sudo -u $(logname) echo "${macosname}_SMPS=${mcossmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) echo "${macosname}_CORES=${mcossmp}" >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/$SMPS/$'${macosname}'_SMPS/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/$CORES/$'${macosname}'_CORES/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		;;
+	esac
 }
 
 function macos_ram() {
@@ -1173,6 +1241,7 @@ function remove_vm() {
 		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_SMPS=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC} > /dev/null 2>&1

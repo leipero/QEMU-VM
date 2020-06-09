@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Passthrough multi GPU support per VM.
 ### Changed
 - GPU detection.
+- SMP, CPU cores and threads handling.
 - Names for templates.
 - RAM and CORES handling, now per VM.
 - Hugepages hangling (not per VM).
