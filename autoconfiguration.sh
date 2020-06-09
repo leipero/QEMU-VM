@@ -723,6 +723,7 @@ function custom_optset_pt() {
 	custom_cores
 	custom_ram
 	hugepages_set
+	echo -e 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 }
 
 function custom_cores() {
@@ -746,7 +747,6 @@ function custom_ram() {
 	if [ -z "${cstmram//[0-9]}" ] && [ -n "$cstmram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}" >> ${CONFIG_LOC}
-		echo 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m ${'${cstvmname}'_RAM}G/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
 		unset cstmram
@@ -924,6 +924,7 @@ function macos_optset_pt() {
 	macos_cores
 	macos_ram
 	macos_hugepages_set
+	echo -e 'ULIMIT_TARGET=$(( $(echo $'${macosname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 }
 
 function macos_cores() {
@@ -947,7 +948,6 @@ function macos_ram() {
 	if [ -z "${mcosram//[0-9]}" ] && [ -n "$mcosram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${macosname}_RAM=${mcosram}" >> ${CONFIG_LOC}
-		echo 'ULIMIT_TARGET=$(( $(echo $'${macosname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/-m $RAM/-m ${'${macosname}'_RAM}G/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
 		unset mcosram
