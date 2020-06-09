@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hugepages hangling (not per VM).
 - VHD control AIO (again, back to native).
 ### Fixed
+- Memory lock limit per VM.
 - Single GPU passthrough fix.
 - GPU detection.
 - Virtio injection.

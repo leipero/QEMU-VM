@@ -745,8 +745,9 @@ function custom_ram() {
 		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
 	if [ -z "${cstmram//[0-9]}" ] && [ -n "$cstmram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}G" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${cstvmname}'_RAM/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}" >> ${CONFIG_LOC}
+		echo 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-m $RAM/-m ${'${cstvmname}'_RAM}G/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 	else
 		unset cstmram
 		custom_ram
@@ -945,8 +946,9 @@ function macos_ram() {
 		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
 	if [ -z "${mcosram//[0-9]}" ] && [ -n "$mcosram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${macosname}'_RAM=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) echo "${macosname}_RAM=${mcosram}G" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-m $RAM/-m $'${macosname}'_RAM/g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) echo "${macosname}_RAM=${mcosram}" >> ${CONFIG_LOC}
+		echo 'ULIMIT_TARGET=$(( $(echo $'${macosname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e 's/-m $RAM/-m ${'${macosname}'_RAM}G/g' ${SCRIPTS_DIR}/"${macosname}".sh
 	else
 		unset mcosram
 		macos_ram
@@ -1148,20 +1150,21 @@ function remove_vm() {
 	filename=$(basename -- "$rmvmslct")
 	rmvmname="${filename%.*}"
 	if [ -z "${rmvmname//[a-zA-Z0-9_]}" ] && [ -n "$rmvmname" ]; then
-		rm ${SCRIPTS_DIR}/${rmvmname}.sh
-		rm ${IMAGES_DIR}/${rmvmname}.qcow2
+		rm ${SCRIPTS_DIR}/${rmvmname}.sh > /dev/null 2>&1
+		rm ${IMAGES_DIR}/${rmvmname}.qcow2 > /dev/null 2>&1
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
 		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
 		## Remove previous VM config
-		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'_VM/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC}
+		sudo -u $(logname) sed -i -e '/^## '${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_IMG=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/echo $'${rmvmname}'_RAM/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
 	else
 		remove_vm
