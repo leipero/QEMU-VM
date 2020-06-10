@@ -754,7 +754,7 @@ function custom_cores() {
 	smt_ht=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
 		--nocancel \
-		--menu "Choose VM Cores Configuration:" 11 60 4 \
+		--menu "Choose VM Cores Configuration:" 9 60 4 \
 		"1. HT/SMT Enabled" "${cstmcores} core(s), ${cstmsmp} thread(s)" \
 		"2. HT/SMT Disabled" "${cstmsmp} core(s), ${cstmsmp} thread(s)" 3>&1 1>&2 2>&3)
 	case $smt_ht in
@@ -989,7 +989,7 @@ function macos_cores() {
 	smt_ht=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Set VM Cores." \
 		--nocancel \
-		--menu "Choose VM Cores Configuration:" 11 60 4 \
+		--menu "Choose VM Cores Configuration:" 9 60 4 \
 		"1. HT/SMT Enabled" "${mcoscores} core(s), ${mcossmp} thread(s)" \
 		"2. HT/SMT Disabled" "${mcossmp} core(s), ${mcossmp} thread(s)" 3>&1 1>&2 2>&3)
 	case $smt_ht in
