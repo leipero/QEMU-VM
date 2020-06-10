@@ -86,7 +86,7 @@ function notfirstrun() {
 function continue_script() {
 	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Continue Setup." \
-		--defaultno --yesno "You must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue. \n Continue?" 7 60
+		--defaultno --yesno "You must have packages equivalent to Arch \"qemu ovmf libvirt virt-manager virglrenderer curl\" packages installed in order to continue. \nDo you wish to Continue?" 8 60
 	askconts=$?
 	case $askconts in
 	0)
@@ -214,8 +214,8 @@ function check_iommu() {
 	if compgen -G "/sys/kernel/iommu_groups/*/devices/*" > /dev/null 2>&1; then
 		populate_iommu
 	else
-		(echo "AMD's IOMMU / Intel's VT-D is not enabled in the BIOS/UEFI. Reboot and enable it."
-		echo "NOTE: You can still use VMs with Virtio paravirtualization offering excellent performance.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 12 60
+		(echo -e "AMD's IOMMU/Intel's VT-D is not enabled in the BIOS/UEFI. \nReboot and enable it."
+	echo -e "NOTE: You can still use VMs with Virtio (VirtGL on/off) \noffering excellent performance.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "System configuration..." 10 60
 		vm_choice
 		chk_create
 		exit 1
@@ -462,6 +462,7 @@ function vm_choice() {
 		io_uring
 		legacy_bios
 		gpu_method_pt
+		display_check
 		gpucount_check_pt
 		custom_optset_pt
 		startupsc_custom
@@ -627,6 +628,41 @@ function gpu_method_pt() {
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	esac
+}
+
+function display_check() {
+	DSPL2="$(ps e | grep -Po " DISPLAY=[\.0-9A-Za-z:]* " | sort -u | sed -n 2p)"
+	if [ -z "$DSPL2" ]; then
+		unset DSPL2
+	else
+		multi_display
+	fi
+}
+
+function multi_display() {
+	(echo -e " Multiple display devices detected. Killing display \nmanager, user session etc. can be removed from the VM."
+	echo -e " You can add it back later from templates if needed, but \nusually you do not need to kill DM, user session etc."
+	echo -e "when using multiple displays, unless for testing.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Display configuration..." 11 60
+	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title "Multi display VM script settings." \
+		--yesno "Remove killing user session from the VM script?" 5 60
+	rmkilldmus=$?
+	case $rmkilldmus in
+	0)
+		sed -i -e '/Display Manager/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/user sessions services/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/EFI framebuffer and console/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/nvidia/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/^systemctl stop/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/^systemctl start/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '\:/sys/class/vtconsole/vtcon:d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '\:efi-framebuffer.0:d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		;;
+	1)
+		unset rmkilldmus
+		;;
+	esac	
 }
 
 function gpucount_check_pt() {
@@ -801,9 +837,11 @@ function hugepages_set() {
 		sudo -u $(logname) sed -i -e 's/$HUGEPAGES/$'${cstvmname}'_HUGEPAGES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	1)
-		sudo -u $(logname) sed -i -e 's:^echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's:^echo 0 > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e '/sysctl -qw/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e '/nr_hugepages/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e '/oad hugepages/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${cstvmname}".sh
 		;;
 	esac
 }
@@ -912,6 +950,41 @@ function gpu_method_mos_pt() {
 		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		;;
 	esac
+}
+
+function display_check_mos() {
+	DSPL2="$(ps e | grep -Po " DISPLAY=[\.0-9A-Za-z:]* " | sort -u | sed -n 2p)"
+	if [ -z "$DSPL2" ]; then
+		unset DSPL2
+	else
+		multi_display_mos
+	fi
+}
+
+function multi_display_mos() {
+	(echo -e " Multiple display devices detected. Killing display \nmanager, user session etc. can be removed from the VM."
+	echo -e " You can add it back later from templates if needed, but \nusually you do not need to kill DM, user session etc."
+	echo -e "when using multiple displays, unless for testing.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Display configuration..." 11 60
+	dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+		--title "Multi display VM script settings." \
+		--yesno "Remove killing user session from the VM script?" 5 60
+	rmkilldmus=$?
+	case $rmkilldmus in
+	0)
+		sed -i -e '/Display Manager/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '/user sessions services/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '/EFI framebuffer and console/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '/nvidia/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '/^systemctl stop/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '/^systemctl start/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '\:/sys/class/vtconsole/vtcon:d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e '\:efi-framebuffer.0:d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${macosname}".sh
+		;;
+	1)
+		unset rmkilldmus
+		;;
+	esac	
 }
 
 function gpucount_check_mos_pt() {
@@ -1036,9 +1109,11 @@ function macos_hugepages_set() {
 		sudo -u $(logname) sed -i -e 's/$HUGEPAGES/$'${macosname}'_HUGEPAGES/g' ${SCRIPTS_DIR}/"${macosname}".sh
 		;;
 	1)
-		sudo -u $(logname) sed -i -e 's:^echo "$HUGEPAGES" > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
-		sudo -u $(logname) sed -i -e 's:^echo 0 > /proc/sys/vm/nr_hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
 		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e '/sysctl -qw/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e '/nr_hugepages/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e '/oad hugepages/d' ${SCRIPTS_DIR}/"${macosname}".sh
+		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${macosname}".sh
 		;;
 	esac
 }
@@ -1249,6 +1324,7 @@ function remove_vm() {
 		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/echo $'${rmvmname}'_RAM/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sed -i -e 'N;/^\n$/D;P;D;' ${CONFIG_LOC} > /dev/null 2>&1
 		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
 	else
 		remove_vm
