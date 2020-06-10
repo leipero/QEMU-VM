@@ -483,6 +483,7 @@ function vm_choice() {
 		create_macos
 		create_macospt
 		gpu_method_mos_pt
+		display_check_mos
 		gpucount_check_mos_pt
 		macos_optset_pt
 		download_macos
