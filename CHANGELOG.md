@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2020-06-11
+### Added
+- Multi-Display support.
+- MacOS base image select (in case it was already downloaded by script).
+### Changed
+- Simplified and reorganized script.
+### Fixed
+- Cores and threads calculation.
+- MacOS name.
+### Removed
+- Redundant code.
+
 ## [0.9.5] - 2020-06-09
 ### Added
 - Passthrough multi GPU support per VM.
@@ -12,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SMP, CPU cores and threads handling.
 - Names for templates.
 - RAM and CORES handling, now per VM.
-- Hugepages hangling (not per VM).
+- Hugepages hangling (now per VM).
 - VHD control AIO (again, back to native).
 ### Fixed
 - Memory lock limit per VM.
