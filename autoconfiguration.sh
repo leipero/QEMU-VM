@@ -831,7 +831,7 @@ function macosvmname() {
 	macosname=$(dialog --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Name." \
 		--nocancel --inputbox "Choose name for your MacOS VM (no special characters):" 7 60 --output-fd 1)
-	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ] && [ -n  "${cstvmname//[0-9]}" ]; then
+	if [ -z "${macosname//[a-zA-Z0-9_]}" ] && [ -n "$macosname" ] && [ -n  "${macosname//[0-9]}" ]; then
 		macosvmoverwrite_check
 	else
 		unset macosname
