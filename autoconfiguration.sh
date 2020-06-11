@@ -322,10 +322,10 @@ function populate_ovmf() {
 }
 
 function populate_iommu() {
-	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/iommu.sh
+	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/tools/iommu.sh
 	## Get PCI_AUDIO
-	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
-	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
+	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
 	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
 	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
 	## GPU COUNT CHECK
@@ -346,30 +346,30 @@ function populate_iommu() {
 
 function iommu_gpu_popget() {
 	#GPU NAMES
-	GPU1NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | cut -d ':' -f3 | sed 's/.\{5\}$//')
-	GPU2NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | cut -d ':' -f3 | sed 's/.\{5\}$//')
-	GPU3NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | cut -d ':' -f3 | sed 's/.\{5\}$//')
-	GPU4NM=$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU1NM=$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 1p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU2NM=$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 2p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU3NM=$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 3p | cut -d ':' -f3 | sed 's/.\{5\}$//')
+	GPU4NM=$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 4p | cut -d ':' -f3 | sed 's/.\{5\}$//')
 	#IOMMU_GPU_GET
-	IOMMU_GPU1="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/^[ \t]*//' | head -c 6)"
-	IOMMU_GPU2="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/^[ \t]*//' | head -c 6)"
-	IOMMU_GPU3="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/^[ \t]*//' | head -c 6)"
-	IOMMU_GPU4="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU1="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU2="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU3="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/^[ \t]*//' | head -c 6)"
+	IOMMU_GPU4="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/^[ \t]*//' | head -c 6)"
 	#IOMMU_GPU_AUDIO_GET
 	IOMMU_A_GPU1="$([ -z "$IOMMU_GPU1" ] && echo "" || echo "${IOMMU_GPU1}1")"
 	IOMMU_A_GPU2="$([ -z "$IOMMU_GPU2" ] && echo "" || echo "${IOMMU_GPU2}1")"
 	IOMMU_A_GPU3="$([ -z "$IOMMU_GPU3" ] && echo "" || echo "${IOMMU_GPU3}1")"
 	IOMMU_A_GPU4="$([ -z "$IOMMU_GPU4" ] && echo "" || echo "${IOMMU_GPU4}1")"
 	#GPU_VIDEO_ID_GET
-	VID_GPU1="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	VID_GPU2="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	VID_GPU3="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	VID_GPU4="$(${SCRIPTS_DIR}/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU1="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 1p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU2="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 2p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU3="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 3p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	VID_GPU4="$(${SCRIPTS_DIR}/tools/iommu.sh | grep -i "vga" | sed -n 4p | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
 	#GPU_AUDIO_ID_GET
-	AID_GPU1="$([ -z "${IOMMU_A_GPU1}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU1}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	AID_GPU2="$([ -z "${IOMMU_A_GPU2}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU2}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	AID_GPU3="$([ -z "${IOMMU_A_GPU3}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU3}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
-	AID_GPU4="$([ -z "${IOMMU_A_GPU4}" ] && echo "" || ${SCRIPTS_DIR}/iommu.sh | grep "${IOMMU_A_GPU4}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU1="$([ -z "${IOMMU_A_GPU1}" ] && echo "" || ${SCRIPTS_DIR}/tools/iommu.sh | grep "${IOMMU_A_GPU1}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU2="$([ -z "${IOMMU_A_GPU2}" ] && echo "" || ${SCRIPTS_DIR}/tools/iommu.sh | grep "${IOMMU_A_GPU2}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU3="$([ -z "${IOMMU_A_GPU3}" ] && echo "" || ${SCRIPTS_DIR}/tools/iommu.sh | grep "${IOMMU_A_GPU3}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	AID_GPU4="$([ -z "${IOMMU_A_GPU4}" ] && echo "" || ${SCRIPTS_DIR}/tools/iommu.sh | grep "${IOMMU_A_GPU4}" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
 }
 
 function gpucount_check() {
