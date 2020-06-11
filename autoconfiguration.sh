@@ -283,7 +283,7 @@ function check_dm() {
 	elif [ -f /usr/lib/systemd/system/xdm.service ] > /dev/null 2>&1; then
 		DMNGR="xdm"
 	else
-		echo "No compatible display manager found. Change Display Manager related parts in the VM.sh scripts manually."
+		echo "No compatible display manager found. Change Display Manager related parts in the config manually."
 	fi
 }
 
@@ -294,6 +294,7 @@ function populate_base_config() {
 	## Create directory structure and log file
 	sudo -u $(logname) mkdir -p ${IMAGES_DIR}/iso
 	sudo -u $(logname) mkdir -p ${IMAGES_DIR}/macos
+	sudo -u $(logname) mkdir -p ${VMS_DIR}
 	sudo -u $(logname) touch ${SCRIPT_DIR}/qemu_log.txt
 	## Populate config paths
 	sudo -u $(logname) sed -i -e '/^LOG=/c\LOG='${SCRIPT_DIR}'/qemu_log.txt' ${CONFIG_LOC}
@@ -507,7 +508,7 @@ function vm_choice() {
 		another_os
 		;;
 	"5. Remove existing VM")
-		remove_vm
+		remove_vm_select
 		another_os
 		;;
 	"6. Exit VM Choice")
@@ -533,7 +534,7 @@ function customvmname() {
 }
 
 function customvmoverwrite_check() {
-	if [ -f ${SCRIPTS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
+	if [ -f ${VMS_DIR}/${cstvmname}.sh ] > /dev/null 2>&1; then
 		dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "VM Overwrite." \
 		--defaultno --yesno "VM named \"${cstvmname}\" already exist.\n Overwrite \"${cstvmname}\" VM (this will delete VHD with the same name as well)?" 7 60
@@ -574,53 +575,54 @@ function customvm_iso() {
 	echo "${IMAGES_DIR}/iso/"
 	echo "directory before you press enter and continue.") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 10 60
 	isoname=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Select ISO." --stdout \
+		--title     "ISO selection." --stdout \
 		--nocancel --title "Select installation .iso file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
-	if [ -n "$isoname" ]; then
+	if [ -f "$isoname" ] && [ -n "$isoname" ]; then
 		ISOVMSET=''${cstvmname}'_ISO='${isoname}''
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
 	else
+		echo "\"$isoname\" is not a file." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "ISO selection." 7 60
 		customvm_iso
 	fi
 }
 
 function create_pt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_pt ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function create_qxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function create_virtio() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function create_virgl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function create_std() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${SCRIPTS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 ##***************************************************************************************************************************
@@ -651,9 +653,9 @@ function custom_smp() {
 		else
 			sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
 			sudo -u $(logname) echo "${cstvmname}_CORES=${cstmsmp}" >> ${CONFIG_LOC}
-			sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-			sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-			sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+			sudo -u $(logname) sed -i -e 's/${SMPS}/${'${cstvmname}'_SMPS}/g' ${VMS_DIR}/${cstvmname}.sh
+			sudo -u $(logname) sed -i -e 's/${CORES}/${'${cstvmname}'_CORES}/g' ${VMS_DIR}/${cstvmname}.sh
+			sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${VMS_DIR}/${cstvmname}.sh
 		fi
 	else
 		unset cstmsmp
@@ -673,15 +675,15 @@ function custom_cores() {
 	"1. HT/SMT Enabled")
 		sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmcores}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/${SMPS}/${'${cstvmname}'_SMPS}/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/${CORES}/${'${cstvmname}'_CORES}/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	"2. HT/SMT Disabled")
 		sudo -u $(logname) echo "${cstvmname}_SMPS=${cstmsmp}" >> ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_CORES=${cstmsmp}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/$SMPS/$'${cstvmname}'_SMPS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/$CORES/$'${cstvmname}'_CORES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/${SMPS}/${'${cstvmname}'_SMPS}/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/${CORES}/${'${cstvmname}'_CORES}/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/threads=2/threads=1/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	esac
 }
@@ -693,7 +695,7 @@ function custom_ram() {
 	if [ -z "${cstmram//[0-9]}" ] && [ -n "$cstmram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-m $RAM/-m ${'${cstvmname}'_RAM}G/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/-m ${RAM}/-m ${'${cstvmname}'_RAM}G/g' ${VMS_DIR}/${cstvmname}.sh
 	else
 		unset cstmram
 		custom_ram
@@ -710,14 +712,14 @@ function hugepages_set() {
 		HPGC="$(( (cstmram * 1050) / 2))"
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_HUGEPAGES=${HPGC}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/$HUGEPAGES/$'${cstvmname}'_HUGEPAGES/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/${HUGEPAGES}/${'${cstvmname}'_HUGEPAGES}/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
-		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e '/sysctl -qw/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e '/nr_hugepages/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e '/oad hugepages/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's: -mem-path /dev/hugepages::g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e '/sysctl -qw/d' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e '/nr_hugepages/d' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e '/oad hugepages/d' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	esac
 }
@@ -729,7 +731,7 @@ function io_uring() {
 	iouringin=$?
 	case $iouringin in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/-drive aio=io_uring,cache=none,format=qcow2,file=$'${cstvmname}'_IMG/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none,format=qcow2,file=${'${cstvmname}'_IMG}/-drive aio=io_uring,cache=none,format=qcow2,file=${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		check_virtio_win
@@ -744,7 +746,7 @@ function legacy_bios() {
 	lgbios=$?
 	case $lgbios in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file=$OVMF_CODE/-boot menu=on,splash-time=5000/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file=${OVMF_CODE}/-boot menu=on,splash-time=5000/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		unset lgbios
@@ -756,7 +758,7 @@ function legacy_bios() {
 ## Graphics Configuration.
 
 function gpu_method() {
-	vgpuchoice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
+	gpumchoice=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "GPU Passthrough method choice." \
 		--nocancel \
 		--menu "Choose method to pass your device:" 11 60 4 \
@@ -769,17 +771,17 @@ function gpu_method() {
 		unset gpumchoice
 		;;
 	"2. AMD")
-		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU},bus=port.1,multifunction=on/host=${IOMMU_GPU},bus=root.1,addr=00.0,multifunction=on,x-vga=on/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU_AUDIO},bus=port.1/host=${IOMMU_GPU_AUDIO},bus=root.1,addr=00.1/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	"3. GPU VBIOS")
-		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=port.1,multifunction=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU},bus=port.1,multifunction=on/host=${IOMMU_GPU},bus=port.1,multifunction=on,romfile=$VBIOS/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	"4. GPU VBIOS AMD")
-		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU,bus=port.1,multifunction=on/host=$IOMMU_GPU,bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sudo -u $(logname) sed -i -e 's/host=$IOMMU_GPU_AUDIO,bus=port.1/host=$IOMMU_GPU_AUDIO,bus=root.1,addr=00.1/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/pcie-root-port,bus=pcie.0,multifunction=on,port=1,chassis=1,id=port.1/ioh3420,bus=pcie.0,addr=1c.0,multifunction=on,port=1,chassis=1,id=root.1/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU},bus=port.1,multifunction=on/host=${IOMMU_GPU},bus=root.1,addr=00.0,multifunction=on,x-vga=on,romfile=$VBIOS/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU_AUDIO},bus=port.1/host=${IOMMU_GPU_AUDIO},bus=root.1,addr=00.1/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	esac
 }
@@ -833,9 +835,11 @@ function custom_gpu() {
 	## Populate VM config Virsh devices
 	sudo -u $(logname) echo -e 'VIRSH_GPU_'${cstvmname}'="'${VIRSH_GPU_NAME}'"' >> ${CONFIG_LOC}
 	sudo -u $(logname) echo -e 'VIRSH_GPU_'${cstvmname}'_AUDIO="'${VIRSH_GPU_AUDIO_NAME}'"' >> ${CONFIG_LOC}
-	## Change VM script IOMMU settings
-	sudo -u $(logname) sed -i -e 's/$VIRSH_GPU/$VIRSH_GPU_'${cstvmname}'/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e 's/$IOMMU_GPU/$IOMMU_GPU_'${cstvmname}'/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+	## Change VM script IOMMU/VIRSH settings
+	sudo -u $(logname) sed -i -e 's/${VIRSH_GPU}/${VIRSH_GPU_'${cstvmname}'}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${VIRSH_GPU_AUDIO}/${VIRSH_GPU_'${cstvmname}'_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${IOMMU_GPU}/${IOMMU_GPU_'${cstvmname}'}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${IOMMU_GPU_AUDIO}/${IOMMU_GPU_'${cstvmname}'_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh
 }
 
 function display_check() {
@@ -857,15 +861,15 @@ function multi_display() {
 	rmkilldmus=$?
 	case $rmkilldmus in
 	0)
-		sed -i -e '/Display Manager/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '/user sessions services/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '/EFI framebuffer and console/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '/nvidia/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '/^systemctl stop/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '/^systemctl start/d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '\:/sys/class/vtconsole/vtcon:d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e '\:efi-framebuffer.0:d' ${SCRIPTS_DIR}/"${cstvmname}".sh
-		sed -i -e 'N;/^\n$/D;P;D;' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sed -i -e '/Display Manager/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '/user sessions services/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '/EFI framebuffer and console/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '/nvidia/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '/^systemctl stop/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '/^systemctl start/d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '\:/sys/class/vtconsole/vtcon:d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e '\:efi-framebuffer.0:d' ${VMS_DIR}/${cstvmname}.sh
+		sed -i -e 'N;/^\n$/D;P;D;' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		unset rmkilldmus
@@ -877,17 +881,17 @@ function multi_display() {
 ## MacOS Specific.
 
 function create_macospt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_pt ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_pt ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function create_macosqxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_qxl ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_IMG/${cstvmname}_IMG/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) sed -i -e "s/DUMMY_ISO/${cstvmname}_ISO/g" ${SCRIPTS_DIR}/"${cstvmname}".sh
-	sudo -u $(logname) chmod +x ${SCRIPTS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_qxl ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
 function macosvm_iso() {
@@ -945,7 +949,7 @@ function macosimg_select() {
 	isoname=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
 		--title     "Select IMG." --stdout \
 		--nocancel --title "Select macOS base IMG file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
-	if [ -n "$isoname" ]; then
+	if [ -f "$isoname" ]; then
 		ISOVMSET=''${cstvmname}'_ISO='${isoname}''
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_ISO=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo $ISOVMSET >> ${CONFIG_LOC}
@@ -989,7 +993,7 @@ function inject_virtio_windows() {
 	injectvirtio=$?
 	case $injectvirtio in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${SCRIPTS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${VMS_DIR}/"${cstvmname}".sh
 		;;
 	1)
 		unset injectvirtio
@@ -1001,7 +1005,7 @@ function inject_virtio_windows() {
 ## Startup Scripts and Shortcuts
 
 function startupsc_custom() {
-		echo "cd ${SCRIPTS_DIR} && sudo nohup ./${cstvmname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstvmname}-vm
+		echo "cd ${VMS_DIR} && sudo nohup ./${cstvmname}.sh > /tmp/nohup.log 2>&1" > /usr/local/bin/${cstvmname}-vm
 		chmod +x /usr/local/bin/${cstvmname}-vm
 		sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
@@ -1022,7 +1026,7 @@ function sc_custom() {
 	    	sudo -u $(logname) mkdir -p /home/$(logname)/.local/share/applications/
 		sudo -u $(logname) echo "[Desktop Entry]
 Name=${cstvmname} VM
-Exec=${SCRIPTS_DIR}/${cstvmname}.sh
+Exec=${VMS_DIR}/${cstvmname}.sh
 Icon=${ICONS_DIR}/${ICON_NAME}
 Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desktop
 		;;
@@ -1035,15 +1039,22 @@ Type=Application" > /home/$(logname)/.local/share/applications/${cstvmname}.desk
 ##***************************************************************************************************************************
 ## Remove VM
 
-function remove_vm() {
-	(echo "Use SPACE to select and ARROW keys to navigate!") | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "WARNING." 7 60
-	rmvmslct=$(dialog  --backtitle "Single GPU Passthrought Configuration Script" \
-		--title     "Remove Virtual Machine." --stdout \
-		--nocancel --title "Select VM for removal:" --fselect ${SCRIPTS_DIR}/ 20 60)
+function remove_vm_select() {
+	echo "Use SPACE to select and ARROW keys to navigate!" | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine." 7 60
+	rmvmslct=$(dialog --title "Remove Virtual Machine." --stdout --title "Select VM to remove:" --fselect ${VMS_DIR}/ 20 60)
 	filename=$(basename -- "$rmvmslct")
 	rmvmname="${filename%.*}"
-	if [ -z "${rmvmname//[a-zA-Z0-9_]}" ] && [ -n "$rmvmname" ]; then
-		rm ${SCRIPTS_DIR}/${rmvmname}.sh > /dev/null 2>&1
+	if [ -z $rmvmname ]; then
+		echo "No VM file selected." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine." 7 60
+	else 
+		remove_vm $rmvmname
+	fi
+}
+
+function remove_vm(){
+	if [ -f $rmvmslct ] 
+	then
+		rm ${VMS_DIR}/${rmvmname}.sh > /dev/null 2>&1
 		rm ${IMAGES_DIR}/${rmvmname}.qcow2 > /dev/null 2>&1
 		rm /usr/local/bin/${rmvmname}-vm > /dev/null 2>&1
 		rm /home/$(logname)/.local/share/applications/${rmvmname}.desktop > /dev/null 2>&1
@@ -1059,10 +1070,11 @@ function remove_vm() {
 		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/echo $'${rmvmname}'_RAM/c\' ${CONFIG_LOC} > /dev/null 2>&1
-		sed -i -e 'N;/^\n$/D;P;D;' ${CONFIG_LOC} > /dev/null 2>&1
-		echo -e "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine" 7 60
+		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${CONFIG_LOC} > /dev/null 2>&1
+		echo "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine." 7 60
 	else
-		remove_vm
+		echo "\"${rmvmname}\" is not a file." | dialog --backtitle "Single GPU Passthrought Configuration Script" --programbox "Remove Virtual Machine." 7 60
+		remove_vm_select
 	fi
 }
 
@@ -1073,6 +1085,7 @@ function remove_vm() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" > /dev/null 2>&1 && pwd )"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 IMAGES_DIR="${SCRIPT_DIR}/images"
+VMS_DIR="${SCRIPTS_DIR}/VMS"
 ICONS_DIR="${SCRIPT_DIR}/icons"
 CONFIG_LOC="${SCRIPTS_DIR}/config"
 ## Get GPU kernel module information.
