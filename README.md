@@ -23,7 +23,7 @@ bash autoconfiguration.sh
 ## Known problems
 - Users must extract, edit (in case of nvidia) VBIOS manually.
 - Script relies on logged user and sudo command.
-- Wayland session will not return display after passthrough VM is down.
+- Wayland session will not return display after passthrough VM is shut down.
 
 ## TODO
 - Fix wayland display issue at VM shutdown.
