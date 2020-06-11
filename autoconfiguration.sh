@@ -463,7 +463,6 @@ function vm_choice() {
 		io_uring
 		legacy_bios
 		gpu_method
-		display_check
 		gpucount_check_pt
 		custom_optset_pt
 		ICON_NAME="television.svg"
@@ -488,7 +487,6 @@ function vm_choice() {
 		create_macospt
 		macosvm_iso
 		gpu_method
-		display_check
 		gpucount_check_pt
 		custom_optset_pt
 		download_macos
@@ -815,10 +813,11 @@ function gpucount_check_pt() {
 	iommu_gpu_popget
 	if [ -z "$IOMMU_GPU2" ];
 	then
-		wait
+		unset IOMMU_GPU4
 	else
 		multi_gpu
 		custom_gpu
+		display_check
 	fi
 }
 
