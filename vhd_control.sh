@@ -1,14 +1,12 @@
 CFDIRG="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-IMAGES_DIR="$CFDIRG/images"
-
-## Virtual drive mount point locations
-VHD_MOUNT_POINT=/home/$(logname)/VHD
+IMAGES_DIR="${CFDIRG}/images"
+MAINMP_DIR="/home/$(logname)/VHD"
 
 ## Check if script was executed with the root privileges.
 [ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
 
 function vhdcontrol() {
-	OPTSLC=$(dialog  --backtitle "VHD Control Script" \
+	OPTSLC=$(dialog  --backtitle "VHD Control Script." \
 		--title     "Option Choice." \
 		--nocancel \
 		--menu "Select VM Type:" 10 40 3 \
@@ -17,7 +15,7 @@ function vhdcontrol() {
 		"3. Exit" "" 3>&1 1>&2 2>&3)
 	case ${OPTSLC} in
 	"1. Mount VHD")
-		vhdmount
+		vhdcheck
 		unset OPTSLC
 		vhdcontrol
 		;;
@@ -33,26 +31,33 @@ function vhdcontrol() {
 	esac
 }
 
-function vhdmount() {
-	if [ -d ${VHD_MOUNT_POINT} ]; then
-		(echo "Can't mount VHD if another is already mounted.") | dialog --backtitle "VHD Control Script" --programbox "WARNING." 7 50 ; else
-	(modprobe nbd max_part=8
-	wait) 2>&1 | dialog --backtitle "VHD Control Script" --progressbox "Mounting." 7 50
-	(echo "Use SPACE to select and ARROW keys to navigate!") | dialog --backtitle "VHD Control Script" --programbox "WARNING." 7 50
-	vhdname=$(dialog  --backtitle "VHD Control Script" \
-		--title     "VHD Selection." --stdout \
-		--nocancel --title "Select VHD file:" --fselect ${IMAGES_DIR}/ 20 60)
-	qemu-nbd --nocache --aio=native --connect=/dev/nbd0 ${vhdname}
-	wait
-	part_select
-	if [ -z "${pn//[1-8]}" ] && [ -n "$pn" ]; then
-		(sudo -u $(logname) mkdir -p ${VHD_MOUNT_POINT}
-		mount /dev/nbd0p${pn} ${VHD_MOUNT_POINT}) | dialog --backtitle "VHD Control Script" --progressbox "Mounting." 7 50
-		echo "Partition nbd0p"$pn" mounted." | dialog --backtitle "VHD Control Script" --programbox "Mounted." 7 50
+function vhdcheck() {
+	vhdmpmname=$(dialog --backtitle "VHD Control Script." \
+	--title     "VHD mount point name." \
+	--inputbox "Type in VHD mount point name (no special characters):" 7 60 --output-fd 1)
+	if [ -z "${vhdmpmname//[a-zA-Z0-9_]}" ] && [ -n "$vhdmpmname" ] && [ -n  "${vhdmpmname//[0-9]}" ]; then
+		VHD_MP="${MAINMP_DIR}/${vhdmpmname}"
+		modprobe nbd max_part=8
+		wait
+		vhdselect
 	else
-		echo "Something went wrong." | dialog --backtitle "VHD Control Script" --programbox "Error." 7 50
-		vhdmount
+		echo "Invalid imput, no special characters allowed." | dialog --backtitle "VHD Control Script" --programbox "WARNING." 7 50
 	fi
+}
+
+function vhdselect() {
+	echo "Use SPACE to select and ARROW keys to navigate!" | dialog --backtitle "VHD Control Script" --programbox "WARNING." 7 50
+	vhdname=$(dialog  --backtitle "VHD Control Script." \
+		--title "VHD Selection." --stdout \
+		--nocancel --title "Select VHD file:" --fselect ${IMAGES_DIR}/ 20 60)
+	if [ -f "$vhdname" ] && [ -n "$vhdname" ]; then
+		qemu-nbd --nocache --aio=native --connect=/dev/nbd0 ${vhdname}
+		wait
+		part_select
+	else
+		echo "\"${vhdname}\" is not a file." | dialog --backtitle "VHD Control Script." --programbox "WARNING." 7 50
+		unset vhdname
+		vhdselect
 	fi
 }
 
@@ -79,44 +84,82 @@ function part_select() {
 		"8." "- $p8" 3>&1 1>&2 2>&3)
 	case $partchoice in
 	"1.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p1" | head -c 11)
+		vhdmount
 		;;
 	"2.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p2" | head -c 11)
+		vhdmount
 		;;
 	"3.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p3" | head -c 11)
+		vhdmount
 		;;
 	"4.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p4" | head -c 11)
+		vhdmount
 		;;
 	"5.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p5" | head -c 11)
+		vhdmount
 		;;
 	"6.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p6" | head -c 11)
+		vhdmount
 		;;
 	"7.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p7" | head -c 11)
+		vhdmount
 		;;
 	"8.")
-		pn=$(echo $partchoice | head -c 1)
+		mp=$(fdisk /dev/nbd0 -l | grep "nbd0p8" | head -c 11)
+		vhdmount
 		;;
 	esac
 }
 
-function vhdunmount() {
-	if [ -d ${VHD_MOUNT_POINT} ]; then
-	(umount $VHD_MOUNT_POINT
-	wait
-	qemu-nbd --disconnect /dev/nbd0
-	wait
-	rmmod nbd
-	wait
-	rm -d $VHD_MOUNT_POINT) | dialog --backtitle "VHD Control Script" --progressbox "Unmounting." 7 50
-	echo "Partition unmounted." | dialog --backtitle "VHD Control Script" --programbox "Unmounted." 7 50
+function vhdmount() {
+	if [ -n "$mp" ]; then
+		sudo -u $(logname) mkdir -p ${VHD_MP}
+		mount ${mp} ${VHD_MP}
+		echo "Partition \"$mp\" mounted." | dialog --backtitle "VHD Control Script" --programbox "Mounted." 7 50
+		unset mp VHD_MP
 	else
-	(echo -e "VHD is not mounted.") | dialog --backtitle "VHD Control Script" --programbox "VHD Unmount." 7 50
+		echo "Something went wrong." | dialog --backtitle "VHD Control Script" --programbox "Error." 7 50
+		vhdcontrol
+	fi
+}
+
+function vhdunmount() {
+	echo "Use SPACE to select and ARROW keys to navigate!" | dialog --backtitle "VHD Control Script" --programbox "WARNING." 7 50
+	VHD_MPU=$(dialog  --backtitle "VHD Control Script." \
+		--title "VHD Unmount." --stdout \
+		--nocancel --title "Select mounted directory:" --dselect ${MAINMP_DIR}/ 20 60)
+	if [ -d "${VHD_MPU}" ]; then
+		up=$(lsblk | grep "${VHD_MPU}" | head -c 12 | tail -c 6)
+		if [ "$(echo $up | grep "nbd0p")" ]; then
+			umount ${VHD_MPU}
+			sleep 2
+			qemu-nbd --disconnect /dev/nbd0
+			sleep 2
+			rmmod nbd
+			wait
+			deletemp
+		else
+			echo "\"${VHD_MPU}\" not mounted."
+		fi
+	else
+		echo -e "VHD is not mounted." | dialog --backtitle "VHD Control Script" --programbox "VHD Unmount." 7 50
+	fi
+}
+
+function deletemp() {
+	if [ "$(ls -A ${VHD_MPU})" ]; then
+		echo "${VHD_MPU} is not Empty!"
+	else
+		rm -d ${VHD_MPU}
+		echo "Partition \"${up}\" unmounted." | dialog --backtitle "VHD Control Script" --programbox "Unmounted." 7 50
+		unset up
 	fi
 }
 

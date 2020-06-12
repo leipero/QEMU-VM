@@ -26,6 +26,7 @@ bash autoconfiguration.sh
 - Wayland session will not return display after passthrough VM is shut down.
 
 ## TODO
+- VHD Control.
 - Fix wayland display issue at VM shutdown.
 - Better way to unbind/bind devices.
 
