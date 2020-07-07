@@ -162,7 +162,7 @@ function install_dep_pacman() {
 		echo "Dependencies are already installed."
 	else
 		echo "Installing dependencies, please wait..."
-		pacman -S --noconfirm qemu ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null
+		pacman -S --noconfirm qemu edk2-ovmf libvirt virt-manager virglrenderer ovmf curl xterm git > /dev/null 2>&1
 		echo "Dependencies are installed."
 	fi
 }
