@@ -324,9 +324,8 @@ function populate_ovmf() {
 
 function populate_iommu() {
 	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/tools/iommu.sh
-	## Get PCI_AUDIO
-	IOMMU_PCI_AUDIO="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
-	PCI_AUDIO_ID="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	## PCI AUDIO GET
+	iommu_pci_audio_get
 	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
 	VIRSH_PCI_AUDIO_NAME="pci_0000_${VIRSH_PCI_AUDIO_GET//./_}"
 	## GPU COUNT CHECK
@@ -343,6 +342,25 @@ function populate_iommu() {
 	sudo -u $(logname) sed -i -e '/^VIRSH_GPU=/c\VIRSH_GPU='${VIRSH_GPU_NAME}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^VIRSH_GPU_AUDIO=/c\VIRSH_GPU_AUDIO='${VIRSH_GPU_AUDIO_NAME}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^VIRSH_PCI_AUDIO=/c\VIRSH_PCI_AUDIO='${VIRSH_PCI_AUDIO_NAME}'' ${CONFIG_LOC}
+}
+
+function iommu_pci_audio_get() {
+	IOMMU_PCI_AUDIO_GET1="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HD Audio" | sed -e 's/^[ \t]*//' | head -c 7)"
+	PCI_AUDIO_ID_GET1="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HD Audio" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	IOMMU_PCI_AUDIO_GET2="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/^[ \t]*//' | head -c 7)"
+	PCI_AUDIO_ID_GET2="$(${SCRIPTS_DIR}/tools/iommu.sh | grep "HDA" | sed -e 's/\( (rev\)....//g' | tail -c 11 | sed 's/]//g')"
+	if [ -n "IOMMU_PCI_AUDIO_GET1" ]; then
+		IOMMU_PCI_AUDIO="$IOMMU_PCI_AUDIO_GET1"
+		PCI_AUDIO_ID="$PCI_AUDIO_ID_GET1"
+	else
+		if [ -n "$IOMMU_PCI_AUDIO_GET2" ]; then
+			IOMMU_PCI_AUDIO="$IOMMU_PCI_AUDIO_GET2"
+			PCI_AUDIO_ID="$PCI_AUDIO_ID_GET2"
+		else
+			IOMMU_PCI_AUDIO=
+			PCI_AUDIO_ID=
+		fi
+	fi
 }
 
 function iommu_gpu_popget() {
@@ -557,7 +575,7 @@ function customvhdsize() {
 		--title     "VHD Size." \
 		--nocancel --inputbox "Choose your \"${cstvmname}\" VHD size (in GB, numeric only):" 7 60 --output-fd 1)
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
 		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'_VM/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
