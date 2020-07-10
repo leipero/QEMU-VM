@@ -15,7 +15,7 @@ bash autoconfiguration.sh
 ```
 
 ## Known problems
-- VHD control might not unbind device properly.
+- VHD control might not remove nbd device properly.
 
 ## Sources links
 - MacOS scripts
