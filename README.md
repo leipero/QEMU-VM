@@ -1,4 +1,4 @@
-# Single GPU passthrough auto configuration script
+# QEMU VM setup script.
 
 ## What this is
 Script to create QEMU VMs. Lot's of options, compact, no superuser required, adds shortcuts (in other category) for every VM created etc.
