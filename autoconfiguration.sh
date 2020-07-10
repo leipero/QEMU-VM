@@ -575,7 +575,7 @@ function customvhdsize() {
 		--title     "VHD Size." \
 		--nocancel --inputbox "Choose your \"${cstvmname}\" VHD size (in GB, numeric only):" 7 60 --output-fd 1)
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
-		sudo -u $(logname) qemu-img create -f qcow2 -o preallocation=metadata,compat=1.1,lazy_refcounts=on ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
+		sudo -u $(logname) qemu-img create -f qcow2 ${IMAGES_DIR}/${cstvmname}.qcow2 ${cstvhdsize}G | dialog --backtitle "Single GPU Passthrought Configuration Script" --progressbox "VHD creation..." 6 60
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
 		sudo -u $(logname) sed -i -e '/^## '${cstvmname}'_VM/c\' ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_IMG=/c\' ${CONFIG_LOC}
