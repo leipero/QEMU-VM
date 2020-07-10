@@ -25,11 +25,6 @@ bash autoconfiguration.sh
 - Script relies on logged user and sudo command.
 - Wayland session will not return display after passthrough VM is shut down.
 
-## TODO
-- VHD Control.
-- Fix wayland display issue at VM shutdown.
-- Better way to unbind/bind devices.
-
 ## Sources links
 - Yuri scripts
 https://gitlab.com/YuriAlek/vfio
