@@ -4,35 +4,26 @@ export LC_ALL=C
 ## Check if script was executed with the root privileges.
 [ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
 
-function first_run() {
-	if [ -f ${SCRIPT_DIR}/.frchk ] > /dev/null 2>&1; then
-		vm_choice
-	else
-		dep_check
-		welcomescript
-	fi
-}
-
-function dep_check() {
+function dialog_check() {
 	if command -v dialog > /dev/null 2>&1; then
-		clear
+		first_run
 	else
-		dep_inst
+		dialog_inst
 	fi
 }
 
-function dep_inst() {
+function dialog_inst() {
 	if command -v apt > /dev/null 2>&1; then
-		echo "Installing script dependencies..."
+		echo "Installing dialog..."
 		apt-get install -y dialog
 	elif command -v yum > /dev/null 2>&1; then
-		echo "Installing script dependencies..."
+		echo "Installing dialog..."
 		yum -y install dialog
 	elif command -v zypper > /dev/null 2>&1; then
-		echo "Installing script dependencies..."
+		echo "Installing dialog..."
 		zypper -n install dialog
 	elif command -v pacman > /dev/null 2>&1; then
-		echo "Installing script dependencies..."
+		echo "Installing dialog..."
 		pacman -S --noconfirm dialog
 	else
 		echo "Dialog not found and package manager is unknown, please install dialog package."
@@ -40,10 +31,34 @@ function dep_inst() {
 	fi
 }
 
+function first_run() {
+	if [ -f ${SCRIPT_DIR}/.frchk ] > /dev/null 2>&1; then
+		notfirstrun
+	else
+		welcomescript
+	fi
+}
+
+function notfirstrun() {
+	odp="$(cat ${SCRIPT_DIR}/.frchk)"
+	ndp="${SCRIPT_DIR}/.frchk"
+	if [[ "$odp" == "$ndp" ]]; then
+		vm_choice
+	else
+		path_changed
+	fi
+}
+
+function path_changed() {
+	echo -e "Script location has been changed, new paths will be \nadded to the config file." | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 8 60
+	sudo -u $(logname) echo "$ndp" > ${SCRIPT_DIR}/.frchk
+	checkos_install
+}
+
 function welcomescript() {
 	dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "Welcome." \
-		--yesno "Welcome to the QEMU VM Setup Script. \n Note: This script requires recent version of QEMU, KVM, OVMF, optionally recent linux kernel version as well, with earlier  versions there is a chance that script may not work properly. Do you wish to continue? " 10 60
+		--yesno "Welcome to the QEMU VM Setup Script. \n Note: This script requires recent version of QEMU, KVM, OVMF, optionally recent linux kernel version as well, with earlier versions there is a chance that script may not work properly. Do you wish to continue?" 9 60
 	wlcmcontinue=$?
 	case $wlcmcontinue in
 	0)
@@ -61,28 +76,28 @@ function checkos_install() {
 		(populate_base_config
 		install_dep_apt
 		populate_ovmf
-		addgroups) | dialog --backtitle "QEMU VM Setup Script" --progressbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 12 60
 		vm_choice
 		chk_create
 	elif command -v yum > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_yum
 		populate_ovmf
-		addgroups) | dialog --backtitle "QEMU VM Setup Script" --progressbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 12 60
 		vm_choice
 		chk_create
 	elif command -v zypper > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_zypper
 		populate_ovmf
-		addgroups) | dialog --backtitle "QEMU VM Setup Script" --progressbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 12 60
 		vm_choice
 		chk_create
 	elif command -v pacman > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_pacman
 		populate_ovmf
-		addgroups) | dialog --backtitle "QEMU VM Setup Script" --progressbox "System configuration..." 12 60
+		addgroups) | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 12 60
 		vm_choice
 		chk_create
 	else
@@ -99,7 +114,6 @@ function continue_script() {
 	0)
 	    	(populate_base_config
 	    	addgroups) | dialog --backtitle "QEMU VM Setup Script" --programbox "System configuration..." 12 60
-		check_iommu
 		vm_choice
 		chk_create
 		remindernopkgm | dialog --backtitle "QEMU VM Setup Script" --programbox "Reminder." 13 60
@@ -214,7 +228,7 @@ function vm_choice() {
 	vmtypech=$(dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "Virtual Machine Selection." \
 		--nocancel \
-		--menu "Select VM Type:" 13 60 6 \
+		--menu "Select VM Type:" 11 60 6 \
 		"1. Custom OS"      "- Virtio/QXL/STD" \
 		"2. macOS"          "- QXL" \
 		"3. Remove existing VM" "" \
@@ -695,12 +709,13 @@ function remindernopkgm() {
 }
 
 function chk_create() {
-	sudo -u $(logname) touch ${SCRIPT_DIR}/.frchk
+	frchk_loc="${SCRIPT_DIR}/.frchk"
+	sudo -u $(logname) echo "$frchk_loc" > ${SCRIPT_DIR}/.frchk
 }
 
 ##***************************************************************************************************************************
 
-first_run
+dialog_check
 
 unset LC_ALL
 
