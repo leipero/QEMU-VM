@@ -7,7 +7,7 @@ Script to create QEMU VMs. Lot's of options, compact, no superuser required, add
 
  Get:
 ```
-git clone https://github.com/leipero/QEMU-VM-setup.git
+git clone https://github.com/leipero/QEMU-VM-setup.git && cd QEMU-VM-setup
 ```
  Run:
 ```
