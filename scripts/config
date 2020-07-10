@@ -1,55 +1,11 @@
 ## User
 VM_USER=$(logname)
 
-## IOMMU groups
-IOMMU_GPU=
-IOMMU_GPU_AUDIO=
-IOMMU_PCI_AUDIO=
-
-## For extracting the VBIOS
-VBIOS_EXTRACT_PATH=/root/VBIOS.rom
-NVFLASH=/root/nvflash_linux
-extract_videobusid="0000:$IOMMU_GPU"
-
-## Virsh devices
-VIRSH_GPU=
-VIRSH_GPU_AUDIO=
-VIRSH_PCI_AUDIO=
-
-## PCI BUS ID
-videoid=
-audioid=
-videobusid="0000:$IOMMU_GPU"
-audiobusid="0000:$IOMMU_GPU_AUDIO"
-pciaudioid=
-pciaudiobusid="0000:$IOMMU_PCI_AUDIO"
-
-## Display manager
-DSPMGR=
-
-## Input devices
-EVENTIF01=
-EVENTKBD=
-EVENTMOUSE=
-
-## USB DEVICE(s) ID(s)
-usb1_vendorid=0x
-usb1_productid=0x
-usb2_vendorid=0x
-usb2_productid=0x
-usb3_vendorid=0x
-usb3_productid=0x
-usb4_vendorid=0x
-usb4_productid=0x
-
 ## Log file
 LOG=
 
 ## Local path for storage
 IMAGES=
-
-## VBIOS
-VBIOS=/root/VBIOS.rom
 
 ## Windows_VM_base
 VIRTIO=$IMAGES/iso/virtio-win.iso
