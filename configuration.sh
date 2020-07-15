@@ -841,6 +841,8 @@ function gpu_audio_iommu_check() {
 function no_gpu_audio() {
 	sudo -u $(logname) sed -i -e 's/-device vfio-pci,host=${IOMMU_GPU_AUDIO},bus=port.1//g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
 	sudo -u $(logname) sed -i -e 's/-device vfio-pci,host=${IOMMU_GPU_AUDIO},bus=root.1,addr=00.1//g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
+	sudo -u $(logname) sed -i -e 's/^virsh nodedev-detach ${VIRSH_GPU_AUDIO}/#virsh nodedev-detach ${VIRSH_GPU_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
+	sudo -u $(logname) sed -i -e 's/^virsh nodedev-reattach ${VIRSH_GPU_AUDIO}/#virsh nodedev-reattach ${VIRSH_GPU_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
 }
 
 function custom_vgpu() {
@@ -1197,7 +1199,8 @@ function remindernopkgm() {
 }
 
 function chk_create() {
-	sudo -u $(logname) touch ${SCRIPT_DIR}/.frchk
+	frchk_loc="${SCRIPT_DIR}/.frchk"
+	sudo -u $(logname) echo "$frchk_loc" > ${SCRIPT_DIR}/.frchk
 }
 
 ##***************************************************************************************************************************
