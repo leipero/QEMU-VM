@@ -4,23 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.9] - 2020-07-10
+## [0.9.8] - 2020-07-15
 ### Added
+- IOMMU GPU audio detection (if not present, removed from the script).
 - Directory structure check.
+- VHD preallocation option.
 ### Changed
-- New name QEMU-VM is now used.
-- Passthrough is no longer supported.
-### Fixed
-- Yum dependencies installation.
-### Removed
-- All IOMMU, passthrough configuration and scripts.
-
-## [0.9.8] - 2020-07-10 (Abandoned Passthrough)
-### Changed
-- Abandoned, archived in this release.
-- Renamed.
+- Script name.
+- VMs arrangements.
 ### Fixed
 - Pacman dependencies installation for EDK2-OVMF.
+- Many small things.
 - PCI audio device iommu detection.
 
 ## [0.9.7] - 2020-06-12
