@@ -11,7 +11,7 @@ git clone https://github.com/leipero/QEMU-VM.git && cd QEMU-VM
 ```
  Run:
 ```
-bash autoconfiguration.sh
+bash configuration.sh
 ```
 
 ## Known problems
