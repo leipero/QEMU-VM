@@ -140,7 +140,7 @@ function vhdunmount() {
 		if [ "$(echo $up | grep "nbd0p")" ]; then
 			umount ${VHD_MPU}
 			sleep 2
-			qemu-nbd --disconnect /dev/nbd0
+			qemu-nbd --disconnect /dev/nbd0 > /dev/null 2>&1
 			sleep 2
 			rmmod nbd
 			wait
