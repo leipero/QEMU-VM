@@ -1180,8 +1180,8 @@ function remove_vm(){
 		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
-		sudo -u $(logname) sed -i -e '/echo $'${rmvmname}'_RAM/c\' ${CONFIG_LOC} > /dev/null 2>&1
-		sudo -u $(logname) sed -i -e '/echo $'${rmvmname}'_FDA/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/$'${rmvmname}'_RAM/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/$'${rmvmname}'_FDA/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${CONFIG_LOC} > /dev/null 2>&1
 		echo "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "QEMU VM Setup Script" --programbox "Remove Virtual Machine." 7 60
 	else
