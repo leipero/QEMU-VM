@@ -5,14 +5,14 @@ CFDIRG="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 source "${CFDIRG}/config"
 
 ## QEMU (VM) command
-qemu-system-x86_64 -enable-kvm -M q35 -vga virtio -display sdl,gl=on \
-  -m ${RAM} -cpu host,hypervisor,topoext -rtc clock=host,base=localtime \
-  -smp ${SMPS},sockets=1,cores=${CORES},threads=2 \
+qemu-system-x86_64 -enable-kvm -vga virtio -display sdl,gl=on \
+  -m "${RAM}"M -cpu host,hypervisor,topoext -rtc clock=host,base=localtime \
+  -smp "${SMPS}",sockets=1,cores="${CORES}",threads=2 \
   -usb -device usb-kbd -device usb-tablet \
-  -soundhw all \
-  -drive if=pflash,format=raw,readonly,file=${OVMF_CODE} \
-  -drive if=virtio,aio=native,cache=none,format=qcow2,file=${DUMMY_IMG} \
-  -drive file=${DUMMY_ISO},index=1,media=cdrom >> ${LOG} 2>&1 &
+  -soundhw ac97 \
+  -drive if=pflash,format=raw,readonly,file="${OVMF_CODE}" \
+  -drive if=virtio,aio=native,cache=none,file="${DUMMY_IMG}" \
+  -drive file="${DUMMY_ISO}",index=1,media=cdrom >> ${LOG} 2>&1 &
 
 ## NVME emulation:
 # -device nvme,drive=NVME1,serial=nvme-1 -drive id=NVME1,if=none,cache=off,aio=threads,format=qcow2,file=${DUMMY_IMG} \

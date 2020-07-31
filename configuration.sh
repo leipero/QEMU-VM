@@ -480,24 +480,25 @@ function vm_choice() {
 	vmtypech=$(dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "Virtual Machine Selection." \
 		--nocancel \
-		--menu "Select VM Type:" 13 60 6 \
+		--menu "Select VM Type:" 14 60 7 \
 		"1. Custom OS"      "- Virtio/QXL/STD (no pt)" \
 		"2. macOS"          "- QXL (no passthrough)" \
 		"3. Custom OS PT"   "- VGA passthrough" \
 		"4. macOS PT"       "- VGA passthrough" \
-		"5. Remove existing VM" "" \
-		"6. Exit VM Choice" "" 3>&1 1>&2 2>&3)
+		"5. Simple VM"      "- Win 9x, single core" \
+		"6. Remove existing VM" "" \
+		"7. Exit VM Choice" "" 3>&1 1>&2 2>&3)
 	case $vmtypech in
 	"1. Custom OS")
 		create_customvm
 		custom_vgpu
 		customvm_iso
+		check_virtio_win
 		io_uring
 		legacy_bios
 		custom_optset
 		ICON_NAME="television.svg"
 		sc_custom
-		remindernpt | dialog --backtitle "QEMU VM Setup Script" --programbox "Reminder." 10 60
 		another_os
 		;;
 	"2. macOS")
@@ -508,13 +509,13 @@ function vm_choice() {
 		download_macos
 		ICON_NAME="apple.svg"
 		sc_custom
-		remindernpt | dialog --backtitle "QEMU VM Setup Script" --programbox "Reminder." 10 60
 		another_os
 		;;
 	"3. Custom OS PT")
 		create_customvm
 		create_pt
 		customvm_iso
+		check_virtio_win
 		io_uring
 		legacy_bios
 		gpu_method
@@ -540,11 +541,20 @@ function vm_choice() {
 		reminder | dialog --backtitle "QEMU VM Setup Script" --programbox "Reminder." 13 60
 		another_os
 		;;
-	"5. Remove existing VM")
+	"5. Simple VM")
+		create_customvm
+		create_smpvm
+		customvm_iso
+		custom_ram
+		fdisk_add
+		sc_custom
+		another_os
+		;;
+	"6. Remove existing VM")
 		remove_vm_select
 		another_os
 		;;
-	"6. Exit VM Choice")
+	"7. Exit VM Choice")
 		clear
 		;;
 	esac
@@ -588,7 +598,7 @@ function customvmoverwrite_check() {
 function customvhdsize() {
 	cstvhdsize=$(dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "VHD Size." \
-		--nocancel --inputbox "Choose your \"${cstvmname}\" VHD size (in GB, numeric only):" 7 60 --output-fd 1)
+		--nocancel --inputbox "Set your \"${cstvmname}\" VHD size in GiB (numeric only):" 7 60 --output-fd 1)
 	if [ -z "${cstvhdsize//[0-9]}" ] && [ -n "$cstvhdsize" ]; then
 		create_vhd_img
 		IMGVMSET=''${cstvmname}'_IMG=$IMAGES/'${cstvmname}'.qcow2'
@@ -635,18 +645,11 @@ function customvm_iso() {
 	fi
 }
 
-function create_pt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_pt ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
-}
-
-function create_qxl() {
+function create_std() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
@@ -665,11 +668,25 @@ function create_virgl() {
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
-function create_std() {
+function create_qxl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
+}
+
+function create_pt() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_pt ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
+}
+
+function create_smpvm() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/smp_tp ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
@@ -739,11 +756,11 @@ function custom_cores() {
 function custom_ram() {
 	cstmram=$(dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "Set VM RAM." \
-		--nocancel --inputbox "Set VM RAM amount (numeric only):" 7 60 --output-fd 1)
+		--nocancel --inputbox "Set VM RAM amount in MiB (numeric only):" 7 60 --output-fd 1)
 	if [ -z "${cstmram//[0-9]}" ] && [ -n "$cstmram" ]; then
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_RAM=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_RAM=${cstmram}" >> ${CONFIG_LOC}
-		sudo -u $(logname) sed -i -e 's/-m ${RAM}/-m ${'${cstvmname}'_RAM}G/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/${RAM}/${'${cstvmname}'_RAM}/g' ${VMS_DIR}/${cstvmname}.sh
 	else
 		unset cstmram
 		custom_ram
@@ -757,7 +774,7 @@ function hugepages_set() {
 	hpgenable=$?
 	case $hpgenable in
 	0)
-		HPGC="$(( (cstmram * 1050) / 2))"
+		HPGC="$(( (cstmram + 200) / 2))"
 		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC}
 		sudo -u $(logname) echo "${cstvmname}_HUGEPAGES=${HPGC}" >> ${CONFIG_LOC}
 		sudo -u $(logname) sed -i -e 's/${HUGEPAGES}/${'${cstvmname}'_HUGEPAGES}/g' ${VMS_DIR}/${cstvmname}.sh
@@ -775,14 +792,14 @@ function hugepages_set() {
 function io_uring() {
 	dialog  --backtitle "QEMU VM Setup Script" \
 		--title "AIO Settings." \
-		--yesno "Enable io_uring AIO (QEMU>=5.0, linux>=5.1)? " 5 60
+		--defaultno --yesno "Enable io_uring AIO (QEMU>=5.0, linux>=5.1)? " 5 60
 	iouringin=$?
 	case $iouringin in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none,format=qcow2,file=${'${cstvmname}'_IMG}/-drive aio=io_uring,cache=none,format=qcow2,file=${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/-drive if=virtio,aio=native,cache=none/-drive aio=io_uring,cache=none/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
-		check_virtio_win
+		unset iouringin
 		;;
 	esac
 }
@@ -794,12 +811,47 @@ function legacy_bios() {
 	lgbios=$?
 	case $lgbios in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file=${OVMF_CODE}/-boot menu=on,splash-time=5000/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file="${OVMF_CODE}"/-boot menu=on,splash-time=2000/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		unset lgbios
 		;;
 	esac	
+}
+
+function fdisk_add() {
+	dialog  --backtitle "QEMU VM Setup Script" \
+		--title "Windows Floppy Disk Support." \
+		--defaultno --yesno "Enable Floppy Disk (will set FDA as boot device)?" 6 60
+	askfda=$?
+	case $askfda in
+	0)
+		sudo -u $(logname) sed -i -e 's/-cdrom "${'${cstvmname}'_ISO}"/-cdrom "${'${cstvmname}'_ISO}" -fda "${'${cstvmname}'_FDA}"/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/-boot order=d/-boot order=a/g' ${VMS_DIR}/${cstvmname}.sh
+		select_fda
+		;;
+	1)
+		unset askfda
+		;;
+	esac
+}
+
+function select_fda() {
+	(echo "Use SPACE to select and ARROW keys to navigate!"
+	echo "Copy your FD image to:"
+	echo "${IMAGES_DIR}/iso/"
+	echo "directory before you press enter and continue.") | dialog --backtitle "QEMU VM Setup Script" --programbox "WARNING." 10 60
+	fdaname=$(dialog  --backtitle "QEMU VM Setup Script" \
+		--title     "FDA selection." --stdout \
+		--nocancel --title "Select floppy disk image file:" --fselect ${IMAGES_DIR}/iso/ 20 60)
+	if [ -f "$fdaname" ] && [ -n "$fdaname" ]; then
+		FDAVMSET=''${cstvmname}'_FDA='${fdaname}''
+		sudo -u $(logname) sed -i -e '/^'${cstvmname}'_FDA=/c\' ${CONFIG_LOC}
+		sudo -u $(logname) echo $FDAVMSET >> ${CONFIG_LOC}
+	else
+		echo "\"$fdaname\" is not a file." | dialog --backtitle "QEMU VM Setup Script" --programbox "FDA selection." 7 60
+		select_fda
+	fi
 }
 
 ##***************************************************************************************************************************
@@ -850,22 +902,22 @@ function custom_vgpu() {
 		--title     "Virtual GPU Selection." \
 		--nocancel \
 		--menu "Choose Virtual Graphic Card:" 11 60 4 \
-		"1. Virtio"   "- 2D, very fast, no OpenGL accleration" \
-		"2. VirtGL"   "- 3D, kernel >= 4.4 and mesa >=11.2" \
-		"3. QXL"      "- compatible and relatively fast 2D" \
-		"4. STD"      "- default QEMU graphics, compatible" 3>&1 1>&2 2>&3)
+		"1. STD"      "- default QEMU graphics, compatible" \
+		"2. QXL"      "- 2D, fast, Windows virtio drivers" \
+		"3. Virtio"   "- 2D, very fast, no OpenGL accleration" \
+		"4. Virgil"   "- 3D, kernel >= 4.4 and mesa >=11.2" 3>&1 1>&2 2>&3)
 	case $vgpuchoice in
-	"1. Virtio")
-		create_virtio
+	"1. STD")
+		create_std
 		;;
-	"2. VirtGL")
-		create_virgl
-		;;
-	"3. QXL")
+	"2. QXL")
 		create_qxl
 		;;
-	"4. STD")
-		create_std
+	"3. Virtio")
+		create_virtio
+		;;
+	"4. Virgil")
+		create_virgl
 		;;
 	esac
 }
@@ -939,15 +991,15 @@ function multi_display() {
 ##***************************************************************************************************************************
 ## MacOS Specific.
 
-function create_macospt() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_pt ${VMS_DIR}/${cstvmname}.sh
+function create_macosqxl() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_qxl ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
-function create_macosqxl() {
-	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_qxl ${VMS_DIR}/${cstvmname}.sh
+function create_macospt() {
+	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/mos_tp_pt ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
@@ -1031,11 +1083,11 @@ function check_virtio_win() {
 function download_virtio() {
 	dialog  --backtitle "QEMU VM Setup Script" \
 		--title "Windows Virtio Drivers." \
-		--defaultno --yesno "Download virtio drivers for Windows guests (usually required)?" 6 60
+		--yesno "Download virtio drivers for Windows guests (required for Virtio)?" 6 60
 	askvirtio=$?
 	case $askvirtio in
 	0)
-		(sudo -u $(logname) curl --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.173-9/virtio-win-0.1.173.iso -o virtio-win.iso) 2>&1 | dialog --backtitle "QEMU VM Setup Script" --progressbox "Downloading Windows Virtio Drivers, please wait..." 12 60
+		(sudo -u $(logname) curl -L -o virtio-win.iso --retry 10 --retry-delay 1 --retry-max-time 60 https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.185-2/virtio-win.iso) 2>&1 | dialog --backtitle "QEMU VM Setup Script" --progressbox "Downloading Windows Virtio Drivers, please wait..." 12 60
 		sudo -u $(logname) mv virtio-win.iso ${IMAGES_DIR}/iso/
 		inject_virtio_windows
 		;;
@@ -1052,7 +1104,7 @@ function inject_virtio_windows() {
 	injectvirtio=$?
 	case $injectvirtio in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom/-drive file=$'${cstvmname}'_ISO,index=1,media=cdrom -drive file=$VIRTIO,index=2,media=cdrom/g' ${VMS_DIR}/"${cstvmname}".sh
+		sudo -u $(logname) sed -i -e 's/-drive file="${'${cstvmname}'_ISO}",index=1,media=cdrom/-drive file="${'${cstvmname}'_ISO}",index=1,media=cdrom -drive file="${VIRTIO}",index=2,media=cdrom/g' ${VMS_DIR}/"${cstvmname}".sh
 		;;
 	1)
 		unset injectvirtio
@@ -1182,11 +1234,6 @@ function another_os() {
 function reminder() {
 	echo -e "Everything is Done."
 	echo -e "VBIOS: You must extract, edit and load VBIOS for VM. \nInfo at:\n https://gitlab.com/YuriAlek/vfio/-/wikis/vbios ."
-	echo -e "Read relevant information on YuriAlek's page at:\n https://gitlab.com/YuriAlek/vfio \nor in \"docs\" directory."
-}
-
-function remindernpt() {
-	echo -e "Everything is Done."
 	echo -e "Read relevant information on YuriAlek's page at:\n https://gitlab.com/YuriAlek/vfio \nor in \"docs\" directory."
 }
 

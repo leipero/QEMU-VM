@@ -6,23 +6,23 @@ source "${CFDIRG}/config"
 
 qemu-system-x86_64 \
     -enable-kvm \
-    -m ${RAM} \
+    -m "${RAM}"M \
     -machine q35,accel=kvm \
-    -smp ${SMPS},sockets=1,cores=${CORES},threads=2 \
+    -smp "${SMPS}",sockets=1,cores="${CORES}",threads=2 \
     -cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc \
     -device isa-applesmc,osk="${OSK}" \
     -smbios type=2 \
-    -drive if=pflash,format=raw,readonly,file=${MACOS_OVMF_CODE} \
-    -drive if=pflash,format=raw,file=${MACOS_OVMF_VARS} \
+    -drive if=pflash,format=raw,readonly,file="${MACOS_OVMF_CODE}" \
+    -drive if=pflash,format=raw,file="${MACOS_OVMF_VARS}" \
     -vga qxl -display sdl \
     -device ich9-intel-hda -device hda-output \
     -usb -device usb-kbd -device usb-tablet \
     -netdev user,id=net0 \
     -device e1000-82545em,netdev=net0,id=net0,mac=52:54:00:c9:18:27 \
     -device ich9-ahci,id=sata \
-    -drive id=ESP,if=none,format=qcow2,file=${MACOS_ESP} \
+    -drive id=ESP,if=none,format=qcow2,file="${MACOS_ESP}" \
     -device ide-hd,bus=sata.2,drive=ESP \
-    -drive id=InstallMedia,format=raw,if=none,file=${DUMMY_ISO} \
+    -drive id=InstallMedia,format=raw,if=none,file="${DUMMY_ISO}" \
     -device ide-hd,bus=sata.3,drive=InstallMedia \
-    -drive id=SystemDisk,if=none,file=${DUMMY_IMG} \
+    -drive id=SystemDisk,if=none,file="${DUMMY_IMG}" \
     -device ide-hd,bus=sata.4,drive=SystemDisk >> ${LOG} 2>&1 &
