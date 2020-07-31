@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows 9x simple VM with required features.
 ### Changed
 - RAM size is now in MiB.
+- Virtio default options.
 ### Fixed
 - RAM allocation with new version of QEMU.
 - Windows XP VMs.
+- Virtio Windows drivers download.
 
 ## [0.9.8] - 2020-07-15
 ### Added
