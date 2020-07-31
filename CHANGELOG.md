@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RAM size is now in MiB.
 ### Fixed
 - RAM allocation with new version of QEMU.
+- Windows XP VMs.
 
 ## [0.9.8] - 2020-07-15
 ### Added
