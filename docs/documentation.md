@@ -77,5 +77,5 @@ ln -sf /usr/lib/libvirglrenderer.so.0 /usr/lib/libvirglrenderer.so.1
 It may differ for your distribution, so you may need to look it up manually.
 
 ## Windows 9x VBE drivers for proper color depth etc.
-Install drivers from:
+Install guest drivers from:
 https://bearwindows.zcm.com.au/vbe9x.htm
