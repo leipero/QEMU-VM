@@ -76,6 +76,10 @@ ln -sf /usr/lib/libvirglrenderer.so.0 /usr/lib/libvirglrenderer.so.1
 ```
 It may differ for your distribution, so you may need to look it up manually.
 
-## Windows 9x VBE drivers for proper color depth etc.
-Install guest drivers from:
+## Windows 9x VBE drivers for proper color depth and resolution
+Install drivers from in your Windows 9x guest VM:
 https://bearwindows.zcm.com.au/vbe9x.htm
+From device manager, VGA adapter, update driver from 032mb location (or higher = not tested), reboot and set resolution and color depth.
+
+## Windows XP drivers
+Use QXL VGA adapter and download virtio Windows drivers in VM creation. From device manager in Windows guest, install from mounted virtio-win.iso, qxl/xp/x86 location. Reboot and you should have accelerated 2D.
