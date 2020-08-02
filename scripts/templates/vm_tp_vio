@@ -11,7 +11,7 @@ qemu-system-x86_64 -enable-kvm -vga virtio -display sdl,gl=on \
   -usb -device usb-kbd -device usb-tablet \
   -soundhw ac97 \
   -drive if=pflash,format=raw,readonly,file="${OVMF_CODE}" \
-  -drive if=virtio,aio=native,cache=none,file="${DUMMY_IMG}" \
+  -drive if=virtio,aio=native,cache=none,format=qcow2,file="${DUMMY_IMG}" \
   -drive file="${DUMMY_ISO}",index=1,media=cdrom >> ${LOG} 2>&1 &
 
 ## NVME emulation:
