@@ -703,7 +703,7 @@ function custom_optset_pt() {
 	custom_smp
 	custom_ram
 	hugepages_set
-	echo -e 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1048576+100000 ))' >> ${CONFIG_LOC}
+	echo -e 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1024+100000 ))' >> ${CONFIG_LOC}
 }
 
 function custom_smp() {
