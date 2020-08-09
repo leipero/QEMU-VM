@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.9] - 2020-08-08
 ### Added
 - Windows 9x simple VM with required features.
+- I440FX chipset selection for Custom VM (non-passthrough, prevents BSOD on Windows XP etc.).
 ### Changed
 - RAM size is now in MiB.
 - Virtio default options.

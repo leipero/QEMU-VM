@@ -492,6 +492,7 @@ function vm_choice() {
 	"1. Custom OS")
 		create_customvm
 		custom_vgpu
+		custom_chipset
 		customvm_iso
 		check_virtio_win
 		io_uring
@@ -693,6 +694,21 @@ function create_smpvm() {
 
 ##***************************************************************************************************************************
 ## System Configuration.
+
+function custom_chipset() {
+	dialog  --backtitle "QEMU VM Setup Script" \
+		--title "Chipset Settings." \
+		--defaultno --yesno "Use old I440FX chipset (needed for Windows XP etc.)?" 6 60
+	askchipset=$?
+	case $askchipset in
+	0)
+		sudo -u $(logname) sed -i -e 's/-enable-kvm -M q35 -vga/-enable-kvm -vga/g' ${VMS_DIR}/${cstvmname}.sh
+		;;
+	1)
+		unset askchipset
+		;;
+	esac
+}
 
 function custom_optset() {
 	custom_smp
