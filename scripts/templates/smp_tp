@@ -7,7 +7,7 @@ source "${CFDIRG}/config"
 ## QEMU (VM) command
 qemu-system-x86_64 -vga std -display sdl \
   -m "${RAM}"M -rtc clock=host,base=localtime \
-  -soundhw sb16 -boot order=d \
+  -device sb16 -boot order=d \
   -drive file="${DUMMY_IMG}" \
   -cdrom "${DUMMY_ISO}" >> ${LOG} 2>&1 &
   
