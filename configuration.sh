@@ -72,6 +72,8 @@ function welcomescript() {
 }
 
 function checkos_install() {
+	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/tools/iommu.sh
+	sudo -u $(logname) chmod +x ${SCRIPT_DIR}/vhd_control.sh
 	if command -v apt > /dev/null 2>&1; then
 		(populate_base_config
 		install_dep_apt
@@ -327,7 +329,6 @@ function populate_base_config() {
 	sudo -u $(logname) sed -i -e '/^usb3_productid=0x/c\usb3_productid=0x'${USB3PID}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^usb4_vendorid=0x/c\usb4_vendorid=0x'${USB4VID}'' ${CONFIG_LOC}
 	sudo -u $(logname) sed -i -e '/^usb4_productid=0x/c\usb4_productid=0x'${USB4PID}'' ${CONFIG_LOC}
-	sudo -u $(logname) chmod +x ${SCRIPT_DIR}/vhd_control.sh
 }
 
 function populate_ovmf() {
@@ -336,7 +337,6 @@ function populate_ovmf() {
 }
 
 function populate_iommu() {
-	sudo -u $(logname) chmod +x "${SCRIPTS_DIR}"/tools/iommu.sh
 	## PCI AUDIO GET
 	iommu_pci_audio_get
 	VIRSH_PCI_AUDIO_GET="${IOMMU_PCI_AUDIO//:/_}"
