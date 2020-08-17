@@ -1192,7 +1192,7 @@ function remove_vm(){
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ISO=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_SMPS=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_CORES=/c\' ${CONFIG_LOC} > /dev/null 2>&1
-		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_RAM=/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/'${rmvmname}'_RAM=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_FDA=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_HUGEPAGES=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
