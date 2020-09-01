@@ -111,14 +111,6 @@ function checkos_install() {
 	fi
 }
 
-function first_run() {
-	if [ -f ${SCRIPT_DIR}/.frchk ] > /dev/null 2>&1; then
-		notfirstrun
-	else
-		welcomescript
-	fi
-}
-
 function continue_script() {
 	dialog  --backtitle "QEMU VM Setup Script" \
 		--title     "Continue Setup." \
