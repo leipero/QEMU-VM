@@ -12,7 +12,7 @@ qemu-system-x86_64 \
     -cpu Penryn,vendor=GenuineIntel,kvm=on,+sse3,+sse4.2,+aes,+xsave,+avx,+xsaveopt,+xsavec,+xgetbv1,+avx2,+bmi2,+smep,+bmi1,+fma,+movbe,+invtsc \
     -device isa-applesmc,osk="${OSK}" \
     -smbios type=2 \
-    -drive if=pflash,format=raw,readonly,file="${MACOS_OVMF_CODE}" \
+    -drive if=pflash,format=raw,readonly=on,file="${MACOS_OVMF_CODE}" \
     -drive if=pflash,format=raw,file="${MACOS_OVMF_VARS}" \
     -vga qxl -display sdl \
     -device ich9-intel-hda -device hda-output \

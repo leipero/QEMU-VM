@@ -51,7 +51,7 @@ qemu-system-x86_64 -runas ${VM_USER} -enable-kvm \
   -device vfio-pci,host=${IOMMU_GPU},bus=port.1,multifunction=on \
   -device vfio-pci,host=${IOMMU_GPU_AUDIO},bus=port.1 \
   -device vfio-pci,host=${IOMMU_PCI_AUDIO} \
-  -drive if=pflash,format=raw,readonly,file="${MACOS_OVMF_CODE}" \
+  -drive if=pflash,format=raw,readonly=on,file="${MACOS_OVMF_CODE}" \
   -drive if=pflash,format=raw,file="${MACOS_OVMF_VARS}" \
   -usb -device usb-kbd -device usb-mouse \
   -object input-linux,id=kbd,evdev=/dev/input/by-id/${EVENTIF01},grab_all=on,repeat=on \
