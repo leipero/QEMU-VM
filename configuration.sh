@@ -643,7 +643,7 @@ function create_std() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga std/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-device virtio-vga-gl -display sdl,gl=on/-vga std/g" ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
@@ -651,7 +651,7 @@ function create_virtio() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga virtio -display sdl,gl=off/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-device virtio-vga-gl -display sdl,gl=on/-device virtio-vga -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
@@ -666,7 +666,7 @@ function create_qxl() {
 	sudo -u $(logname) cp ${SCRIPTS_DIR}/templates/vm_tp_vio ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_IMG}/${'${cstvmname}'_IMG}/g' ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) sed -i -e 's/${DUMMY_ISO}/${'${cstvmname}'_ISO}/g' ${VMS_DIR}/${cstvmname}.sh
-	sudo -u $(logname) sed -i -e "s/-vga virtio -display sdl,gl=on/-vga qxl -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
+	sudo -u $(logname) sed -i -e "s/-device virtio-vga-gl -display sdl,gl=on/-vga qxl -display sdl/g" ${VMS_DIR}/${cstvmname}.sh
 	sudo -u $(logname) chmod +x ${VMS_DIR}/${cstvmname}.sh
 }
 
@@ -694,7 +694,7 @@ function custom_chipset() {
 	askchipset=$?
 	case $askchipset in
 	0)
-		sudo -u $(logname) sed -i -e 's/-enable-kvm -M q35 -vga/-enable-kvm -vga/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/-enable-kvm -M q35/-enable-kvm/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		unset askchipset
@@ -820,7 +820,7 @@ function legacy_bios() {
 	lgbios=$?
 	case $lgbios in
 	0)
-		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly,file="${OVMF_CODE}"/-boot menu=on,splash-time=2000/g' ${VMS_DIR}/${cstvmname}.sh
+		sudo -u $(logname) sed -i -e 's/-drive if=pflash,format=raw,readonly=on,file="${OVMF_CODE}"/-boot menu=on,splash-time=2000/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	1)
 		unset lgbios
