@@ -527,6 +527,7 @@ function vm_choice() {
 		gpu_method
 		gpucount_check_pt
 		custom_optset_pt
+		ulimit_set
 		download_macos
 		ICON_NAME="apple.svg"
 		startupsc_custom
