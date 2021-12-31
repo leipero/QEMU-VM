@@ -513,8 +513,8 @@ function vm_choice() {
 		legacy_bios
 		gpu_method
 		gpucount_check_pt
-		gpu_audio_iommu_check
 		custom_optset_pt
+		ulimit_set
 		ICON_NAME="television.svg"
 		startupsc_custom
 		reminder | dialog --backtitle "QEMU VM Setup Script" --programbox "Reminder." 13 60
@@ -526,7 +526,6 @@ function vm_choice() {
 		macosvm_iso
 		gpu_method
 		gpucount_check_pt
-		gpu_audio_iommu_check
 		custom_optset_pt
 		download_macos
 		ICON_NAME="apple.svg"
@@ -711,7 +710,6 @@ function custom_optset_pt() {
 	custom_smp
 	custom_ram
 	hugepages_set
-	echo -e 'ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1024+100000 ))' >> ${CONFIG_LOC}
 }
 
 function custom_smp() {
@@ -796,6 +794,11 @@ function hugepages_set() {
 		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	esac
+}
+
+function ulimit_set() {
+	sudo -u $(logname) echo -e ''${cstvmname}'_ULIMIT_TARGET=$(( $(echo $'${cstvmname}'_RAM)*1024+100000 ))' >> ${CONFIG_LOC}
+	sudo -u $(logname) sed -i -e 's/${ULIMIT_TARGET}/${'${cstvmname}'_ULIMIT_TARGET}/g' ${VMS_DIR}/${cstvmname}.sh
 }
 
 function io_uring() {
@@ -893,17 +896,6 @@ function gpu_method() {
 		sudo -u $(logname) sed -i -e 's/host=${IOMMU_GPU_AUDIO},bus=port.1/host=${IOMMU_GPU_AUDIO},bus=root.1,addr=00.1/g' ${VMS_DIR}/${cstvmname}.sh
 		;;
 	esac
-}
-
-function gpu_audio_iommu_check() {
-	[ -z "$GPU_AUDIO_ID" ] && no_gpu_audio || unset GPU_AUDIO_ID
-}
-
-function no_gpu_audio() {
-	sudo -u $(logname) sed -i -e 's/-device vfio-pci,host=${IOMMU_GPU_AUDIO},bus=port.1//g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
-	sudo -u $(logname) sed -i -e 's/-device vfio-pci,host=${IOMMU_GPU_AUDIO},bus=root.1,addr=00.1//g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
-	sudo -u $(logname) sed -i -e 's/^virsh nodedev-detach ${VIRSH_GPU_AUDIO}/#virsh nodedev-detach ${VIRSH_GPU_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
-	sudo -u $(logname) sed -i -e 's/^virsh nodedev-reattach ${VIRSH_GPU_AUDIO}/#virsh nodedev-reattach ${VIRSH_GPU_AUDIO}/g' ${VMS_DIR}/${cstvmname}.sh > /dev/null 2>&1
 }
 
 function custom_vgpu() {
@@ -1190,6 +1182,7 @@ function remove_vm(){
 		sudo -u $(logname) sed -i -e '/^## IOMMU_'${rmvmname}'_VM/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^IOMMU_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e '/^VIRSH_GPU_'${rmvmname}'/c\' ${CONFIG_LOC} > /dev/null 2>&1
+		sudo -u $(logname) sed -i -e '/^'${rmvmname}'_ULIMIT_TARGET=/c\' ${CONFIG_LOC} > /dev/null 2>&1
 		sudo -u $(logname) sed -i -e 'N;/^\n$/D;P;D;' ${CONFIG_LOC} > /dev/null 2>&1
 		echo "Virtual Machine \"${rmvmname}\" removed." | dialog --backtitle "QEMU VM Setup Script" --programbox "Remove Virtual Machine." 7 60
 	else
