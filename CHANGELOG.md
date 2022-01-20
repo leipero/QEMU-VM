@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2022-01-20
+### Fixed
+- Ulimit is now used per VM.
+- OVMF dependencies for Arch.
+- Virgl now working properly with newer QUEMU versions.
+
 ## [0.9.9] - 2020-08-08
 ### Added
 - Windows 9x simple VM with required features.
